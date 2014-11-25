@@ -45,46 +45,56 @@ object DocumentController extends JsonSerializerController with Secured {
     )
   }
 
-  def list(maskId: String) = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "docsList"
-    Document.list(maskId).map { docs =>
-      ok(Json.toJson(docs))
-    }
+//  def list(maskId: String) = Auth.async(parse.anyContent) { user => implicit request =>
+//    implicit val method = "docsList"
+//    Document.list(maskId).map { docs =>
+//      ok(Json.toJson(docs))
+//    }
+//  }
+//
+//
+//  def byId(id: String) = Auth.async(parse.anyContent) { user => implicit request =>
+//    implicit val method = "docsById"
+//    Document.byId(id).map { mayBeDoc =>
+//      ok(Json.toJson(mayBeDoc.map(d => List(d)).getOrElse(Nil)))
+//    }
+//  }
+//
+//  /**
+//   * TODO: permission to creation repo
+//   * TODO: field type (number,email,text,id,????)
+//   * @param repo
+//   * @return
+//   */
+//  def newMask(repo: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
+//    implicit val method = "docsNewMask"
+//    implicit val MaskJson = (
+//      (__ \ "name").read[String] ~
+//        (__ \ "title").read[String] ~
+//        (__ \ "params").read(Reads(js =>
+//          JsSuccess(js.as[JsArray].value.foldLeft(Map.empty[String, String]) { case item =>
+//            val name = item._2.\("name").as[String]
+//            val _type = item._2.\("type").as[String]
+//            item._1 ++ Map(name -> _type)
+//          }
+//          )
+//        ))
+//      )((name, title, params) => Mask.empty(name, repo, title, params))
+//
+//    //TODO: replace json reads/writes to Json.format
+//
+//    request.body.validate(MaskJson) match {
+//      case m: JsSuccess[Mask] =>
+//        Mask.save(m.get).map { _ =>
+//          ok(Json.toJson(m.get))
+//        }
+//      case JsError(e) =>
+//        futureBad("error parse json")
+//    }
+//  }
+
+
+  def newDoc(repo: String,mask: String) = {
+
   }
-
-
-  def byId(id: String) = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "docsById"
-    Document.byId(id).map { mayBeDoc =>
-      ok(Json.toJson(mayBeDoc.map(d => List(d)).getOrElse(Nil)))
-    }
-  }
-
-  def newMask(repo: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
-    implicit val method = "docsNewMask"
-    implicit val MaskJson = (
-      (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read(Reads(js =>
-          JsSuccess(js.as[JsArray].value.foldLeft(Map.empty[String, String]) { case item =>
-            val name = item._2.\("name").as[String]
-            val _type = item._2.\("type").as[String]
-            item._1 ++ Map(name -> _type)
-          }
-          )
-        ))
-      )((name, title, params) => Mask.empty(name, repo, title, params))
-
-    (request.body.validate(MaskJson) match {
-      case m: JsSuccess[Mask] =>
-        Mask.save(m.get).map { _ =>
-          ok(Json.toJson(m.get))
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }).recover(recover)
-  }
-
-
-
 }

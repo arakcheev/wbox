@@ -3,7 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.{MongoDB, MongoConnection}
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONObjectID}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -11,13 +11,13 @@ import scala.util.{Failure, Success}
 /**
  * Created by artem on 23.11.14.
  */
-case class Repository(id: Option[BSONObjectID],name: String,status:Int,user: String,uuid: String) {
+case class Repository(id: Option[BSONObjectID], name: String, status: Int, user: String, uuid: String) {
 
 }
 
-object Repository extends  Entity[Repository]{
+object Repository extends Entity[Repository] {
 
-  import EntityRW.repository._
+  import EntityRW._
 
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
@@ -26,7 +26,7 @@ object Repository extends  Entity[Repository]{
    * @param repo
    * @return
    */
-  def save(repo: Repository) ={
+  def save(repo: Repository) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.insert(repo)
   }
@@ -41,13 +41,13 @@ object Repository extends  Entity[Repository]{
     }
   }
 
-  def list(user: User) ={
+  def list(user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("user" -> user.id.get.stringify)).cursor[Repository].collect[List]()
   }
 
-  def apply(name: String,user: User): Repository = {
-    Repository(Some(BSONObjectID.generate),name,1,user.id.get.stringify,SecureGen.nextSessionId())
+  def apply(name: String, user: User): Repository = {
+    Repository(Some(BSONObjectID.generate), name, 1, user.id.get.stringify, SecureGen.nextSessionId())
   }
 
 }

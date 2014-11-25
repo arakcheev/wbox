@@ -1,5 +1,6 @@
 package models.entities
 
+import models.SecureGen
 import models.db.MongoConnection
 import play.api.libs.Crypto
 import play.api.libs.json.{JsString, Json}
@@ -16,7 +17,7 @@ import scala.concurrent.Future
  */
 case class User(var id: Option[BSONObjectID], var uuid: Option[String], var email: Option[String],
                 var password: Option[String], var creditCards: Option[BSONArray], var account: Option[BSONDocument],
-                var avatar: Option[String], var status: Int, var subUser: Boolean, var users: Option[BSONArray]) {
+                var avatar: Option[String], var status: Int, var subUser: Boolean, var users: Option[BSONArray]){
 
   def getAccountAsJson = {
     account.map { doc =>
@@ -55,7 +56,7 @@ case class User(var id: Option[BSONObjectID], var uuid: Option[String], var emai
 
 object User extends Entity[User] {
 
-  import models.entities.EntityRW.user._
+  import EntityRW._
 
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 

@@ -2,7 +2,7 @@ package models.entities
 
 import models.db.MongoConnection
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.bson._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -10,33 +10,34 @@ import scala.util.{Failure, Success}
 /**
  * Created by artem on 23.11.14.
  */
-case class Document(id: Option[BSONObjectID], name: String, mask: String,
-                    params: Map[String, String], date: Long, publish: Boolean = false, status: Int) {
+case class Document(var id: Option[BSONObjectID], var name: String, var mask: String,
+                    var params: Map[String, String], var date: Long, var publish: Boolean = false, var status: Int,
+                    var publishDate: Long, var unpublishDate: Long) {
 
 }
 
 case class Mask(id: Option[BSONObjectID], var name: String, var title: String,
-                var params: Map[String, String], repo: String, status: Int)
+                var params: Map[String, String], repo: String, status: Int) {
 
-object Mask extends Entity[Document] {
+}
+
+object Mask extends Entity[Mask] {
 
   import EntityRW._
-  import EntityRW.mask._
 
   override val collection: BSONCollection = MongoConnection.db.collection("mask")
 
-  def empty(name: String, repo: String, title: String, params: Map[String, String]) ={
+  def empty(name: String, repo: String, title: String, params: Map[String, String]) = {
     Mask(Some(BSONObjectID.generate), name, title, params, repo, 1)
   }
 
   def newMask(name: String, repo: String, title: String, params: Map[String, String]) = {
     val mask = Mask(Some(BSONObjectID.generate), name, title, params, repo, 1)
-    save(mask)
+    insert(mask)
   }
 
-  def save(mask: Mask) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    collection.insert(mask)
+  def insert(mask: Mask) = {
+    save(mask,MaskWriter)
   }
 
   def byId(id: String) = {
@@ -59,16 +60,24 @@ object Mask extends Entity[Document] {
 object Document extends Entity[Document] {
 
   import EntityRW._
-  import EntityRW.document._
 
   override val collection: BSONCollection = MongoConnection.db.collection("documents")
 
+  /**
+   * Generate empty Document
+   * @return
+   */
+  def empty() = Document(None, "", "", Map.empty, 0l, false, 0, 0l, 0l)
 
-  def save(doc: Document) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    collection.insert(doc)
+  def insert(doc: Document) = {
+    save(doc, DocumentWriter)
   }
 
+  /**
+   * Find document by ObjectId<id>
+   * @param id
+   * @return
+   */
   def byId(id: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     BSONObjectID.parse(id) match {
@@ -79,6 +88,11 @@ object Document extends Entity[Document] {
     }
   }
 
+  /**
+   * List all document by mask id
+   * @param maskId
+   * @return
+   */
   def list(maskId: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("mask" -> maskId)).cursor[Document].collect[List]()

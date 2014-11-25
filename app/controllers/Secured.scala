@@ -33,11 +33,12 @@ trait Secured {
       Action.async(p) { implicit request =>
         User.fromRequest(request).flatMap {
           case Some(user) =>
-            f(user)(request)
+            f(user)(request).recover(recover)
           case None => futureBad("Invalid Token cookie")
         }.recover(recover)
       }
     }
+
 
   }
 
