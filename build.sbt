@@ -2,7 +2,9 @@ name := """wbox"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala).settings(
+  sbt.Keys.fork in Test := false
+)
 
 scalaVersion := "2.11.1"
 

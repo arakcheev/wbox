@@ -193,7 +193,8 @@ object EntityRW extends MapRW {
         doc.getAs[String]("name"),
         doc.getAs[BSONDateTime]("publishDate").map(_.value),
         doc.getAs[BSONDateTime]("unpublishDate").map(_.value),
-        doc.getAs[BSONObjectID]("mask")
+        doc.getAs[BSONObjectID]("mask"),
+        doc.getAs[BSONObjectID]("user")
       )
     }
   }
@@ -204,7 +205,8 @@ object EntityRW extends MapRW {
       "name" -> rel.name,
       "publishDate" -> BSONDateTime(rel.publishDate.getOrElse(DateTime.now().getMillis)),
       "unpublishDate" -> BSONDateTime(rel.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
-      "mask" -> rel.mask
+      "mask" -> rel.mask,
+      "user" -> rel.user
     )
   }
 

@@ -2,6 +2,7 @@ package models.entities
 
 import models.SecureGen
 import models.db.MongoConnection
+import play.api.Logger
 import play.api.libs.Crypto
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.RequestHeader
@@ -58,7 +59,7 @@ object User extends Entity[User] {
 
   import EntityRW._
 
-  override val collection: BSONCollection = MongoConnection.db.collection("repository")
+  override val collection: BSONCollection = MongoConnection.db.collection("user")
 
   val COOKIE_EMAIL = "u_e"
 

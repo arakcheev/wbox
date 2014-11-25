@@ -13,7 +13,7 @@ import scala.util.{Failure, Success}
  */
 case class Release(var id: Option[BSONObjectID], var name: Option[String], var publishDate: Option[Long],
                    var unpublishDate: Option[Long],
-                   var mask: Option[BSONObjectID]) {
+                   var mask: Option[BSONObjectID], var user : Option[BSONObjectID]) {
 
 }
 
@@ -27,7 +27,55 @@ object Release extends Entity[Release] {
    * Generate empty Release
    * @return
    */
-  def empty() = Release(None, None, None, None, None)
+  def empty(): Release = Release(None, None, None, None, None,None)
+
+  /**
+   * Generate new release by params
+   *
+   * //todo this method saves release. Need some wrapper with Release method to move matching functionality from controllers
+   * @param maskId
+   * @param user
+   * @return
+   */
+  def gen(maskId: String, user: User): Future[Option[Release]] = {
+    val r = Release.empty
+    BSONObjectID.parse(maskId).map{id =>
+      r.mask = Some(id)
+      r.user = user.id
+      r
+    } match {
+      case Success(r) =>
+        insert(r)
+      case Failure(e) =>
+        Future.failed(e)
+    }
+  }
+
+  /**
+   * Generate new release by params
+   * @param maskId
+   * @param user
+   * @param pd
+   * @param upd
+   * @param name
+   * @return
+   */
+  def gen(maskId: String,user: User,pd: Long,upd: Long,name: String): Future[Option[Release]] = {
+    val r = Release.empty
+    BSONObjectID.parse(maskId).map{id =>
+      r.mask = Some(id)
+      r.user = user.id
+      r.publishDate = Some(pd)
+      r.unpublishDate = Some(upd)
+      r.name = Some(name)
+      r
+    } match {
+      case Success(r) =>
+        insert(r)
+      case Failure(e) =>
+        Future.failed(e)
+    }
+  }
 
   /**
    * Insert new relese

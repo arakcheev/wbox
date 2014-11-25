@@ -1,10 +1,12 @@
 package controllers
 
-import models.entities.{Mask, Document}
-import play.api.libs.json.{JsString, Json, JsValue, Writes}
+import models.entities.{Release, Mask, Document}
+import play.api.libs.json.{JsString, JsValue, Writes}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
+import play.api.libs.json.Json
+import reactivemongo.bson.BSONObjectID
 
 /**
  * Created by artem on 23.11.14.
@@ -32,6 +34,13 @@ object DocumentController extends JsonSerializerController with Secured {
       "date" -> doc.date
     )
   }
+
+  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
+    def writes(bson: BSONObjectID): JsValue = Json.obj(
+      "id" -> bson.stringify
+    )
+  }
+
 
   implicit val maskWrites = new Writes[Mask] {
     def writes(doc: Mask): JsValue = Json.obj(
@@ -65,24 +74,16 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param repo
    * @return
    */
-  def newMask(repo: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
+  def newMask(repo: String) = Auth.async(parse.anyContent) { user => implicit request =>
     implicit val method = "docsNewMask"
     implicit val MaskJson = (
       (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read(Reads(js =>
-          JsSuccess(js.as[JsArray].value.foldLeft(Map.empty[String, String]) { case item =>
-            val name = item._2.\("name").as[String]
-            val _type = item._2.\("type").as[String]
-            item._1 ++ Map(name -> _type)
-          }
-          )
-        ))
-      )((name, title, params) => Mask.empty(name, repo, title, params))
+        (__ \ "title").read[String]
+      )((name, title) => Mask.empty(name, repo, title, Map.empty))
 
     //TODO: replace json reads/writes to Json.format
-
-    request.body.validate(MaskJson) match {
+    //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
+    request.body.asJson.getOrElse(Json.obj()).validate(MaskJson) match {
       case m: JsSuccess[Mask] =>
         Mask.insert(m.get).map { _ =>
           ok(Json.toJson(m.get))
@@ -120,6 +121,33 @@ object DocumentController extends JsonSerializerController with Secured {
       case JsError(e) =>
         futureBad("error parse json")
     }
+  }
+
+
+  /**
+   * Create new Release
+   * @param maskId
+   * @return
+   */
+  def newRelease(maskId: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
+    implicit val method = "releaseNew"
+    case class ReleaseJson(publishDate: Long, unpublishDate: Long, name: String){}
+    (request.body.validate((
+      (__ \ "publishDate").read[Long] ~
+        (__ \ "unpublishDate").read[Long] ~
+        (__ \ "name").read[String]
+      )((pd, upd,name) => ReleaseJson(pd,upd,name))) match {
+      case r: JsSuccess[ReleaseJson] =>
+        Release.gen(maskId, user, r.get.publishDate, r.get.unpublishDate, r.get.name)
+      case JsError(e) =>
+        Release.gen(maskId, user)
+    }).map {
+      case Some(release) =>
+        ok(Json.writes[Release].writes(release))
+      case None =>
+        bad("error save new release")
+    }
+
   }
 
 }
