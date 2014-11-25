@@ -13,7 +13,7 @@ import scala.util.{Failure, Success}
  */
 case class Release(var id: Option[BSONObjectID], var name: Option[String], var publishDate: Option[Long],
                    var unpublishDate: Option[Long],
-                   var mask: Option[BSONObjectID], var user : Option[BSONObjectID]) {
+                   var mask: Option[BSONObjectID], var user: Option[BSONObjectID]) {
 
 }
 
@@ -27,7 +27,7 @@ object Release extends Entity[Release] {
    * Generate empty Release
    * @return
    */
-  def empty(): Release = Release(None, None, None, None, None,None)
+  def empty(): Release = Release(Some(BSONObjectID.generate), None, None, None, None, None)
 
   /**
    * Generate new release by params
@@ -39,7 +39,7 @@ object Release extends Entity[Release] {
    */
   def gen(maskId: String, user: User): Future[Option[Release]] = {
     val r = Release.empty
-    BSONObjectID.parse(maskId).map{id =>
+    BSONObjectID.parse(maskId).map { id =>
       r.mask = Some(id)
       r.user = user.id
       r
@@ -60,9 +60,9 @@ object Release extends Entity[Release] {
    * @param name
    * @return
    */
-  def gen(maskId: String,user: User,pd: Long,upd: Long,name: String): Future[Option[Release]] = {
+  def gen(maskId: String, user: User, pd: Long, upd: Long, name: String): Future[Option[Release]] = {
     val r = Release.empty
-    BSONObjectID.parse(maskId).map{id =>
+    BSONObjectID.parse(maskId).map { id =>
       r.mask = Some(id)
       r.user = user.id
       r.publishDate = Some(pd)
@@ -114,6 +114,27 @@ object Release extends Entity[Release] {
         collection.find(BSONDocument("mask" -> bsonId)).cursor[Release].collect[List]()
       case Failure(e) =>
         Future.successful(Nil)
+    }
+  }
+
+  /**
+   * Add document to release
+   * @param releaseId
+   * @param docId
+   * @param user
+   * @return
+   */
+  def addDoc(releaseId: String, docId: String, user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(releaseId).flatMap { release =>
+      Document byId docId flatMap { document =>
+        document.zip(release).headOption.map { case (d, r) =>
+          d.release = r.id
+          d.publishDate = r.publishDate
+          d.unpublishDate = r.unpublishDate
+          Document.update(d)
+        }.getOrElse(Future(None))
+      }
     }
   }
 

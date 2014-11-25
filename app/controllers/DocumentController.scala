@@ -1,12 +1,15 @@
 package controllers
 
 import models.entities.{Release, Mask, Document}
+import play.api.Logger
 import play.api.libs.json.{JsString, JsValue, Writes}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.libs.json.Json
 import reactivemongo.bson.BSONObjectID
+
+import scala.concurrent.Future
 
 /**
  * Created by artem on 23.11.14.
@@ -24,6 +27,10 @@ object DocumentController extends JsonSerializerController with Secured {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
+    def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
+  }
+
   implicit val writes = new Writes[Document] {
     def writes(doc: Document): JsValue = Json.obj(
       "id" -> JsString(doc.id.map(_.stringify).getOrElse("")),
@@ -35,11 +42,7 @@ object DocumentController extends JsonSerializerController with Secured {
     )
   }
 
-  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
-    def writes(bson: BSONObjectID): JsValue = Json.obj(
-      "id" -> bson.stringify
-    )
-  }
+
 
 
   implicit val maskWrites = new Writes[Mask] {
@@ -78,8 +81,9 @@ object DocumentController extends JsonSerializerController with Secured {
     implicit val method = "docsNewMask"
     implicit val MaskJson = (
       (__ \ "name").read[String] ~
-        (__ \ "title").read[String]
-      )((name, title) => Mask.empty(name, repo, title, Map.empty))
+        (__ \ "title").read[String] ~
+        (__ \ "params").read[Map[String, String]]
+      )((name, title, params) => Mask.empty(name, repo, title, params))
 
     //TODO: replace json reads/writes to Json.format
     //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
@@ -89,54 +93,69 @@ object DocumentController extends JsonSerializerController with Secured {
           ok(Json.toJson(m.get))
         }
       case JsError(e) =>
-        futureBad("error parse json")
+        futureBad(s"error parse json. ${e}")
     }
   }
 
-
-  def newDoc(repo: String, mask: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
+  /**
+   *
+   * @param maskId
+   * @return
+   */
+  def newDoc(maskId: String) = Auth.async(parse.anyContent) { user => implicit request =>
     implicit val method = "docsNew"
-    implicit val DocJson = (
+    request.body.asJson.getOrElse(Json.obj()).validate((
       (__ \ "name").read[String] ~
-        (__ \ "params").read(Reads(js =>
-          JsSuccess(js.as[JsArray].value.foldLeft(Map.empty[String, String]) { case item =>
-            val name = item._2.\("name").as[String]
-            val _type = item._2.\("type").as[String]
-            item._1 ++ Map(name -> _type)
-          }
-          )
-        ))
+        (__ \ "params").read[Map[String, String]]
       )((name, params) => {
-      val doc = Document empty()
-      doc.name = name
-      doc.params = params
-      doc
-    })
-
-    request.body.validate(DocJson) match {
-      case d: JsSuccess[Document] =>
-        Document.insert(d.get).map { _ =>
-          ok(Json.toJson(d.get))
+      Document gen(maskId, name, params, user)
+    })) match {
+      case d: JsSuccess[Future[Option[Document]]] =>
+        d.get.map {
+          case Some(doc) =>
+            ok(Json.writes[Document].writes(doc))
+          case None =>
+            bad("Error save new document")
         }
       case JsError(e) =>
         futureBad("error parse json")
     }
   }
 
+  /**
+   * Adding document to release
+   * @return
+   */
+  def addToRelease = Auth.async() {user => implicit request =>
+    request.body.asJson.getOrElse(Json.obj()).validate((
+      (__ \ "release").read[String] ~
+        (__ \ "doc").read[String]
+      )((release, document) => {
+      Release addDoc(release,document,user)
+    })) match {
+      case d: JsSuccess[Future[Document]] =>
+        d.get.map { doc =>
+          ok(Json.writes[Document].writes(doc))
+        }
+      case JsError(e) =>
+        futureBad("error parse json")
+    }
+  }
 
   /**
    * Create new Release
    * @param maskId
    * @return
    */
-  def newRelease(maskId: String) = Auth.async(parse.tolerantJson) { user => implicit request =>
+  def newRelease(maskId: String) = Auth.async() { user => implicit request =>
     implicit val method = "releaseNew"
-    case class ReleaseJson(publishDate: Long, unpublishDate: Long, name: String){}
-    (request.body.validate((
+    case class ReleaseJson(publishDate: Long, unpublishDate: Long, name: String) {}
+    //TODO: parse request body as tolerantJson
+    (request.body.asJson.getOrElse(Json.obj()).validate((
       (__ \ "publishDate").read[Long] ~
         (__ \ "unpublishDate").read[Long] ~
         (__ \ "name").read[String]
-      )((pd, upd,name) => ReleaseJson(pd,upd,name))) match {
+      )((pd, upd, name) => ReleaseJson(pd, upd, name))) match {
       case r: JsSuccess[ReleaseJson] =>
         Release.gen(maskId, user, r.get.publishDate, r.get.unpublishDate, r.get.name)
       case JsError(e) =>

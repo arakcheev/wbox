@@ -126,8 +126,8 @@ object EntityRW extends MapRW {
     def read(doc: BSONDocument): Document = {
       Document(
         doc.getAs[BSONObjectID]("_id"),
-        doc.getAs[String]("name").getOrElse(""),
-        doc.getAs[String]("mask").getOrElse(""),
+        doc.getAs[String]("name"),
+        doc.getAs[BSONObjectID]("mask"),
         doc.getAs[BSONDocument]("params").map(docs =>
           docs.elements.map { tuple =>
             tuple._1 -> tuple._2.seeAsTry[String].get
@@ -135,24 +135,26 @@ object EntityRW extends MapRW {
         ).getOrElse(Map.empty),
         doc.getAs[BSONDateTime]("date").map(_.value).getOrElse(0l),
         doc.getAs[Int]("status").getOrElse(0),
-        doc.getAs[Long]("publishDate").getOrElse(0),
-        doc.getAs[Long]("unpublishDate").getOrElse(0),
-        doc.getAs[BSONObjectID]("release")
+        doc.getAs[Long]("publishDate"),
+        doc.getAs[Long]("unpublishDate"),
+        doc.getAs[BSONObjectID]("release"),
+        doc.getAs[BSONObjectID]("user")
       )
     }
   }
 
   implicit object DocumentWriter extends BSONDocumentWriter[Document] {
     def write(doc: Document): BSONDocument = BSONDocument(
-      "_id" -> doc.id.getOrElse(BSONObjectID.generate),
+      "_id" -> doc.id,
       "name" -> doc.name,
       "mask" -> doc.mask,
       "params" -> doc.params,
       "date" -> BSONDateTime(doc.date),
       "status" -> BSONInteger(doc.status),
-      "publishDate" -> BSONDateTime(doc.publishDate),
-      "unpublishDate" -> BSONDateTime(doc.unpublishDate),
-      "release" -> doc.release
+      "publishDate" -> BSONDateTime(doc.publishDate.getOrElse(DateTime.now().getMillis)),
+      "unpublishDate" -> BSONDateTime(doc.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
+      "release" -> doc.release,
+      "user" -> doc.user
     )
   }
 
@@ -201,7 +203,7 @@ object EntityRW extends MapRW {
 
   implicit object ReleaseWriter extends BSONDocumentWriter[Release] {
     def write(rel: Release): BSONDocument = BSONDocument(
-      "_id" -> rel.id.getOrElse(BSONObjectID.generate),
+      "_id" -> rel.id,
       "name" -> rel.name,
       "publishDate" -> BSONDateTime(rel.publishDate.getOrElse(DateTime.now().getMillis)),
       "unpublishDate" -> BSONDateTime(rel.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
