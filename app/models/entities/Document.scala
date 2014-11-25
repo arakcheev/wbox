@@ -1,6 +1,7 @@
 package models.entities
 
 import models.db.MongoConnection
+import org.joda.time.DateTime
 import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson._
 
@@ -11,7 +12,7 @@ import scala.util.{Failure, Success}
  * Created by artem on 23.11.14.
  */
 case class Document(var id: Option[BSONObjectID], var name: String, var mask: String,
-                    var params: Map[String, String], var date: Long, var publish: Boolean = false, var status: Int,
+                    var params: Map[String, String], var date: Long, var status: Int,
                     var publishDate: Long, var unpublishDate: Long) {
 
 }
@@ -67,8 +68,14 @@ object Document extends Entity[Document] {
    * Generate empty Document
    * @return
    */
-  def empty() = Document(None, "", "", Map.empty, 0l, false, 0, 0l, 0l)
+  def empty() = Document(None, "", "", Map.empty, DateTime.now().getMillis, 0, DateTime.now().getMillis, DateTime.now().plusYears(10).getMillis)
 
+  /**
+   * Insert new doc
+   * TODO: update is it method?
+   * @param doc
+   * @return
+   */
   def insert(doc: Document) = {
     save(doc, DocumentWriter)
   }

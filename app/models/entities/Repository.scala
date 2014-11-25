@@ -26,9 +26,8 @@ object Repository extends Entity[Repository] {
    * @param repo
    * @return
    */
-  def save(repo: Repository) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    collection.insert(repo)
+  def insert(repo: Repository) = {
+    save(repo,RepositoryWriter)
   }
 
   def byId(id: String) = {

@@ -133,7 +133,6 @@ object EntityRW extends MapRW {
           }.toMap
         ).getOrElse(Map.empty),
         doc.getAs[BSONDateTime]("date").map(_.value).getOrElse(0l),
-        doc.getAs[Boolean]("publish").getOrElse(false),
         doc.getAs[Int]("status").getOrElse(0),
         doc.getAs[Long]("publishDate").getOrElse(0),
         doc.getAs[Long]("unpublishDate").getOrElse(0)
@@ -148,7 +147,6 @@ object EntityRW extends MapRW {
       "mask" -> doc.mask,
       "params" -> doc.params,
       "date" -> BSONDateTime(doc.date),
-      "publish" -> doc.publish,
       "status" -> BSONInteger(doc.status),
       "publishDate" -> BSONDateTime(doc.publishDate),
       "unpublishDate" -> BSONDateTime(doc.unpublishDate)
