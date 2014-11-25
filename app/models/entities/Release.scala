@@ -36,7 +36,7 @@ object Release extends Entity[Release] {
    * @return
    */
   def insert(rel: Release) = {
-    //    save(rel, DocumentWriter)
+    save(rel, ReleaseWriter)
   }
 
   /**
