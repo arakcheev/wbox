@@ -13,7 +13,7 @@ import scala.util.{Failure, Success}
  */
 case class Document(var id: Option[BSONObjectID], var name: String, var mask: String,
                     var params: Map[String, String], var date: Long, var status: Int,
-                    var publishDate: Long, var unpublishDate: Long) {
+                    var publishDate: Long, var unpublishDate: Long,var release: Option[BSONObjectID]) {
 
 }
 
@@ -68,7 +68,8 @@ object Document extends Entity[Document] {
    * Generate empty Document
    * @return
    */
-  def empty() = Document(None, "", "", Map.empty, DateTime.now().getMillis, 0, DateTime.now().getMillis, DateTime.now().plusYears(10).getMillis)
+  def empty() = Document(None, "", "", Map.empty, DateTime.now().getMillis, 0, DateTime.now().getMillis,
+    DateTime.now().plusYears(10).getMillis,None)
 
   /**
    * Insert new doc

@@ -1,6 +1,7 @@
 package models.entities
 
 import models.db.MongoDB
+import org.joda.time.DateTime
 import reactivemongo.api.BSONSerializationPack.Writer
 import reactivemongo.bson._
 
@@ -17,7 +18,7 @@ trait Entity[E] extends MongoDB {
    * TODO: broadcast fields to all entities
    */
 
-  private[models] def save(doc: E,writer: BSONDocumentWriter[E]) = {
+  private[models] def save(doc: E, writer: BSONDocumentWriter[E]) = {
     val bson = writer.write(doc)
     collection.insert[BSONDocument](bson).map { wr =>
       if (wr.inError) {
@@ -135,7 +136,8 @@ object EntityRW extends MapRW {
         doc.getAs[BSONDateTime]("date").map(_.value).getOrElse(0l),
         doc.getAs[Int]("status").getOrElse(0),
         doc.getAs[Long]("publishDate").getOrElse(0),
-        doc.getAs[Long]("unpublishDate").getOrElse(0)
+        doc.getAs[Long]("unpublishDate").getOrElse(0),
+        doc.getAs[BSONObjectID]("release")
       )
     }
   }
@@ -149,7 +151,8 @@ object EntityRW extends MapRW {
       "date" -> BSONDateTime(doc.date),
       "status" -> BSONInteger(doc.status),
       "publishDate" -> BSONDateTime(doc.publishDate),
-      "unpublishDate" -> BSONDateTime(doc.unpublishDate)
+      "unpublishDate" -> BSONDateTime(doc.unpublishDate),
+      "release" -> doc.release
     )
   }
 
@@ -180,6 +183,28 @@ object EntityRW extends MapRW {
       "params" -> doc.params,
       "repo" -> doc.repo,
       "status" -> BSONInteger(doc.status)
+    )
+  }
+
+  implicit object ReleaseReader extends BSONDocumentReader[Release] {
+    def read(doc: BSONDocument): Release = {
+      Release(
+        doc.getAs[BSONObjectID]("_id"),
+        doc.getAs[String]("name"),
+        doc.getAs[BSONDateTime]("publishDate").map(_.value),
+        doc.getAs[BSONDateTime]("unpublishDate").map(_.value),
+        doc.getAs[BSONObjectID]("mask")
+      )
+    }
+  }
+
+  implicit object ReleaseWriter extends BSONDocumentWriter[Release] {
+    def write(rel: Release): BSONDocument = BSONDocument(
+      "_id" -> rel.id.getOrElse(BSONObjectID.generate),
+      "name" -> rel.name,
+      "publishDate" -> BSONDateTime(rel.publishDate.getOrElse(DateTime.now().getMillis)),
+      "unpublishDate" -> BSONDateTime(rel.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
+      "mask" -> rel.mask
     )
   }
 
