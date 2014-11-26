@@ -61,8 +61,8 @@ class DocumentControllerTest extends Specification {
         )
       )).withHeaders("Content-Type" -> "text/javascript")
       val docResult = controllers.DocumentController.newDoc(maskId)(docRequest)
-//      Logger.logger.debug(s"${contentAsString(docResult)}")
-      docId = contentAsJson(docResult).\("result").as[JsArray].value(0).\("data").\("id").as[String]
+      Logger.logger.debug(s"Doc result is ${contentAsString(docResult)}")
+      docId = contentAsJson(docResult).\("result").as[JsArray].value(0).\("data").\("uuid").as[String]
       docId must !==("")
     }
     "create new release" in new WithApplication(){
@@ -86,7 +86,7 @@ class DocumentControllerTest extends Specification {
         "doc" -> docId
       )).withHeaders(("Content-Type", "text/javascript"))
       val addDocToReleaseResult = controllers.DocumentController.pushToRelease()(addDocToReleaseRequest)
-//      Logger.logger.debug(s"${contentAsString(addDocToReleaseResult)}")
+      Logger.logger.debug(s"Add doc to release ${contentAsString(addDocToReleaseResult)}")
       val newDocId = contentAsJson(addDocToReleaseResult).\("result").as[JsArray].value(0).\("data").\("id").as[String]
       status(addDocToReleaseResult) must equalTo(OK)
       newDocId must !==("")
