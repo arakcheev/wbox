@@ -123,25 +123,27 @@ object Release extends Entity[Release] {
    * @return
    */
   def list(user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("user" -> user.id)).cursor[Release].collect[List]()
   }
 
   /**
    * Add document to release
    * @param releaseId
-   * @param docId
+   * @param docUUID
    * @param user
    * @return
    */
-  def pushDoc(releaseId: String, docId: String, user: User) = {
+  def pushDoc(releaseId: String, docUUID: String, user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
-      Document byId docId flatMap { document =>
+      Document byId docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = r.id
+          d.name = d.name.map(_ +d.revision)
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
-          Document update d
+          Document update (d,user)
         }.getOrElse(Future(None))
       }
     }
@@ -151,19 +153,19 @@ object Release extends Entity[Release] {
    * Pop document from release
    * //TODO: publish and unpublish date of documents after pop from release
    * @param releaseId
-   * @param docId
+   * @param docUUID
    * @param user
    * @return
    */
-  def popDoc(releaseId: String, docId: String, user: User) = {
+  def popDoc(releaseId: String, docUUID: String, user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
-      Document byId docId flatMap { document =>
+      Document byId docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = None
           d.publishDate = None
           d.unpublishDate = None
-          Document update d
+          Document update (d,user)
         }.getOrElse(Future(None))
       }
     }

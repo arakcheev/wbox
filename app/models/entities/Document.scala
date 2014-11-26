@@ -1,9 +1,9 @@
 package models.entities
 
+import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
 import reactivemongo.api.collections.bson.BSONCollection
-import reactivemongo.api.commands._
 import reactivemongo.bson._
 
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ case class Mask(id: Option[BSONObjectID], var name: String, var title: String,
 
 object Mask extends Entity[Mask] {
 
-  import EntityRW._
+  import models.entities.EntityRW._
 
   override val collection: BSONCollection = MongoConnection.db.collection("mask")
 
@@ -62,7 +62,7 @@ object Mask extends Entity[Mask] {
 
 object Document extends Entity[Document] {
 
-  import EntityRW._
+  import models.entities.EntityRW._
 
   override val collection: BSONCollection = MongoConnection.db.collection("documents")
 
@@ -70,8 +70,8 @@ object Document extends Entity[Document] {
    * Generate empty Document
    * @return
    */
-  def empty() = Document(Some(BSONObjectID.generate), None, None, Map.empty, DateTime.now().getMillis, 1, None,
-    None, None, None, None, None)
+  def empty() = Document(id = Some(BSONObjectID.generate), None, None, Map.empty, DateTime.now().getMillis, 1, None,
+    None, None, None, None, uuid = Some(SecureGen.nextSessionId()))
 
   /**
    * Generate Document by set of parameters
@@ -107,18 +107,23 @@ object Document extends Entity[Document] {
   }
 
   /**
-   * Find document by ObjectId<id>
-   * @param id
+   * Find document by uuid
+   * @param uuid
    * @return
    */
-  def byId(id: String) = {
+  def byId(uuid: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    BSONObjectID.parse(id) match {
-      case Success(bsonId) =>
-        collection.find(BSONDocument("_id" -> bsonId)).one[Document]
-      case Failure(e) =>
-        Future.successful(None)
-    }
+    collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).one[Document]
+  }
+
+  /**
+   * Find document by ObjectId<id>
+   * @param bsonId
+   * @return
+   */
+  def byId(bsonId: BSONObjectID) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    collection.find(BSONDocument("_id" -> bsonId)).one[Document]
   }
 
   /**
@@ -133,23 +138,15 @@ object Document extends Entity[Document] {
 
   /**
    * Update Document. This updated currently saved doc in DB
-   * todo: update is create new document
-   * todo: create new doc with save id, update new id on old doc
    * @param doc
    * @return
    */
-  def update(doc: Document) = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    val selector = BSONDocument("_id" -> doc.id)
-    val newId = BSONObjectID.generate
-    collection.update(selector, BSONDocument("$set" -> BSONDocument("_id" -> newId))).flatMap { wr =>
-      if (wr.hasErrors) {
-        Future.failed(wr.getCause)
-      } else {
-        doc.revision = doc.revision.map(_ + 1)
-        insert(doc)
-      }
-    }.map(_ => doc)
+  def update(doc: Document, user: User): Future[Option[Document]] = {
+    doc.id = Some(BSONObjectID.generate)
+    doc.revision = doc.revision.map(_ + 1)
+    doc.date = DateTime.now().getMillis
+    doc.user = user.id
+    insert(doc)
   }
 
 }

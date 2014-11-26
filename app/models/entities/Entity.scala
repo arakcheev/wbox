@@ -157,7 +157,7 @@ object EntityRW extends MapRW {
       "unpublishDate" -> BSONDateTime(doc.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
       "release" -> doc.release,
       "user" -> doc.user,
-      "revision" -> doc.revision,
+      "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
       "uuid" -> doc.uuid
     )
   }
