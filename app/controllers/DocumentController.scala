@@ -125,12 +125,12 @@ object DocumentController extends JsonSerializerController with Secured {
     request.body.asJson.getOrElse(Json.obj()).validate((
       (__ \ "release").read[String] ~
         (__ \ "doc").read[String]
-      )((release, document) => {
-      Release pushDoc(release,document,user)
+      )((releaseId, documentId) => {
+      Release pushDoc(releaseId,documentId,user)
     })) match {
-      case d: JsSuccess[Future[Document]] =>
+      case d: JsSuccess[Future[Option[Document]]] =>
         d.get.map { doc =>
-          ok(Json.toJson(doc))
+          ok(Json toJson doc )
         }
       case JsError(e) =>
         futureBad("error parse json")
@@ -146,12 +146,12 @@ object DocumentController extends JsonSerializerController with Secured {
     request.body.asJson.getOrElse(Json.obj()).validate((
       (__ \ "release").read[String] ~
         (__ \ "doc").read[String]
-      )((release, document) => {
-      Release popDoc (release,document,user)
+      )((releaseId, documentId) => {
+      Release popDoc (releaseId,documentId,user)
     })) match {
-      case d: JsSuccess[Future[Document]] =>
+      case d: JsSuccess[Future[Option[Document]]] =>
         d.get.map { doc =>
-          ok(Json.toJson(doc))
+          ok(Json toJson doc)
         }
       case JsError(e) =>
         futureBad("error parse json")
@@ -182,7 +182,6 @@ object DocumentController extends JsonSerializerController with Secured {
       case None =>
         bad("error save new release")
     }
-
   }
 
 }
