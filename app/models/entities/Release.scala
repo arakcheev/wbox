@@ -118,6 +118,15 @@ object Release extends Entity[Release] {
   }
 
   /**
+   * List of all user releases
+   * @param user
+   * @return
+   */
+  def list(user: User) = {
+    collection.find(BSONDocument("user" -> user.id)).cursor[Release].collect[List]()
+  }
+
+  /**
    * Add document to release
    * @param releaseId
    * @param docId
@@ -132,7 +141,7 @@ object Release extends Entity[Release] {
           d.release = r.id
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
-          Document.update(d)
+          Document update d
         }.getOrElse(Future(None))
       }
     }
