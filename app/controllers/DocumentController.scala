@@ -1,12 +1,9 @@
 package controllers
 
-import models.entities.{Release, Mask, Document}
-import play.api.Logger
-import play.api.libs.json.{JsString, JsValue, Writes}
+import models.entities.{Document, Mask, Release}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, JsValue, Json, Writes, _}
 import reactivemongo.bson.BSONObjectID
 
 import scala.concurrent.Future
@@ -31,6 +28,8 @@ object DocumentController extends JsonSerializerController with Secured {
     def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
   }
 
+  implicit val documentWriter = Json.writes[Document]
+
   implicit val writes = new Writes[Document] {
     def writes(doc: Document): JsValue = Json.obj(
       "id" -> JsString(doc.id.map(_.stringify).getOrElse("")),
@@ -41,9 +40,6 @@ object DocumentController extends JsonSerializerController with Secured {
       "date" -> doc.date
     )
   }
-
-
-
 
   implicit val maskWrites = new Writes[Mask] {
     def writes(doc: Mask): JsValue = Json.obj(
@@ -84,7 +80,6 @@ object DocumentController extends JsonSerializerController with Secured {
         (__ \ "title").read[String] ~
         (__ \ "params").read[Map[String, String]]
       )((name, title, params) => Mask.empty(name, repo, title, params))
-
     //TODO: replace json reads/writes to Json.format
     //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
     request.body.asJson.getOrElse(Json.obj()).validate(MaskJson) match {
@@ -113,7 +108,7 @@ object DocumentController extends JsonSerializerController with Secured {
       case d: JsSuccess[Future[Option[Document]]] =>
         d.get.map {
           case Some(doc) =>
-            ok(Json.writes[Document].writes(doc))
+            ok(Json.toJson(doc))
           case None =>
             bad("Error save new document")
         }
@@ -123,19 +118,40 @@ object DocumentController extends JsonSerializerController with Secured {
   }
 
   /**
-   * Adding document to release
+   * Push document to release
    * @return
    */
-  def addToRelease = Auth.async() {user => implicit request =>
+  def pushToRelease = Auth.async() {user => implicit request =>
     request.body.asJson.getOrElse(Json.obj()).validate((
       (__ \ "release").read[String] ~
         (__ \ "doc").read[String]
       )((release, document) => {
-      Release addDoc(release,document,user)
+      Release pushDoc(release,document,user)
     })) match {
       case d: JsSuccess[Future[Document]] =>
         d.get.map { doc =>
-          ok(Json.writes[Document].writes(doc))
+          ok(Json.toJson(doc))
+        }
+      case JsError(e) =>
+        futureBad("error parse json")
+    }
+  }
+
+  /**
+   *
+   * Pooping document from release
+   * @return
+   */
+  def popFromRelease = Auth.async() {user => implicit request =>
+    request.body.asJson.getOrElse(Json.obj()).validate((
+      (__ \ "release").read[String] ~
+        (__ \ "doc").read[String]
+      )((release, document) => {
+      Release popDoc (release,document,user)
+    })) match {
+      case d: JsSuccess[Future[Document]] =>
+        d.get.map { doc =>
+          ok(Json.toJson(doc))
         }
       case JsError(e) =>
         futureBad("error parse json")

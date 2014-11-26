@@ -85,7 +85,7 @@ class DocumentControllerTest extends Specification {
         "release" -> releaseId,
         "doc" -> docId
       )).withHeaders(("Content-Type", "text/javascript"))
-      val addDocToReleaseResult = controllers.DocumentController.addToRelease()(addDocToReleaseRequest)
+      val addDocToReleaseResult = controllers.DocumentController.pushToRelease()(addDocToReleaseRequest)
 //      Logger.logger.debug(s"${contentAsString(addDocToReleaseResult)}")
       val newDocId = contentAsJson(addDocToReleaseResult).\("result").as[JsArray].value(0).\("data").\("id").as[String]
       status(addDocToReleaseResult) must equalTo(OK)

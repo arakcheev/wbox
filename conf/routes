@@ -9,7 +9,7 @@ POST        /mask/:maskId/documents/new                 controllers.DocumentCont
 
 POST        /mask/:maskId/documents/releases/new        controllers.DocumentController.newRelease(maskId: String)
 
-POST        /releases/documents/add                     controllers.DocumentController.addToRelease
+POST        /releases/documents/add                     controllers.DocumentController.pushToRelease
 
 POST        /mask/new                                   controllers.DocumentController.newMask(repo: String)
 
