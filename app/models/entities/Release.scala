@@ -133,7 +133,7 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def addDoc(releaseId: String, docId: String, user: User) = {
+  def pushDoc(releaseId: String, docId: String, user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
       Document byId docId flatMap { document =>
@@ -141,6 +141,28 @@ object Release extends Entity[Release] {
           d.release = r.id
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
+          Document update d
+        }.getOrElse(Future(None))
+      }
+    }
+  }
+
+  /**
+   * Pop document from release
+   * //TODO: publish and unpublish date of documents after pop from release
+   * @param releaseId
+   * @param docId
+   * @param user
+   * @return
+   */
+  def popDoc(releaseId: String, docId: String, user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(releaseId).flatMap { release =>
+      Document byId docId flatMap { document =>
+        document.zip(release).headOption.map { case (d, r) =>
+          d.release = None
+          d.publishDate = None
+          d.unpublishDate = None
           Document update d
         }.getOrElse(Future(None))
       }

@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 case class Document(var id: Option[BSONObjectID], var name: Option[String], var mask: Option[BSONObjectID],
                     var params: Map[String, String], var date: Long, var status: Int,
                     var publishDate: Option[Long], var unpublishDate: Option[Long], var release: Option[BSONObjectID],
-                    var user: Option[BSONObjectID]) {
+                    var user: Option[BSONObjectID], var revision: Option[Int], var uuid: Option[String]) {
 
 }
 
@@ -71,7 +71,7 @@ object Document extends Entity[Document] {
    * @return
    */
   def empty() = Document(Some(BSONObjectID.generate), None, None, Map.empty, DateTime.now().getMillis, 1, None,
-    None, None, None)
+    None, None, None, None, None)
 
   /**
    * Generate Document by set of parameters
@@ -133,26 +133,23 @@ object Document extends Entity[Document] {
 
   /**
    * Update Document. This updated currently saved doc in DB
+   * todo: update is create new document
+   * todo: create new doc with save id, update new id on old doc
    * @param doc
    * @return
    */
   def update(doc: Document) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     val selector = BSONDocument("_id" -> doc.id)
-    val mod = BSONDocument(
-      "$set" -> BSONDocument(
-        "name" -> doc.name,
-        "mask" -> doc.mask,
-        "params" -> doc.params,
-        "date" -> BSONDateTime(doc.date),
-        "status" -> BSONInteger(doc.status),
-        "publishDate" -> BSONDateTime(doc.publishDate.getOrElse(DateTime.now().getMillis)),
-        "unpublishDate" -> BSONDateTime(doc.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
-        "release" -> doc.release,
-        "user" -> doc.user
-      )
-    )
-    collection.update(selector,mod).map{_ => doc}
+    val newId = BSONObjectID.generate
+    collection.update(selector, BSONDocument("$set" -> BSONDocument("_id" -> newId))).flatMap { wr =>
+      if (wr.hasErrors) {
+        Future.failed(wr.getCause)
+      } else {
+        doc.revision = doc.revision.map(_ + 1)
+        insert(doc)
+      }
+    }.map(_ => doc)
   }
 
 }
