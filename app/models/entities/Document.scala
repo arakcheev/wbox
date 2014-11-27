@@ -149,5 +149,13 @@ object Document extends Entity[Document] {
     insert(doc)
   }
 
+
+  /**
+   * this method return list of documents with same uuid. this list indicates history of document changing
+   */
+  def history(uuid: String) = {
+    collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).cursor[Document].collect[List]()
+  }
+
 }
 

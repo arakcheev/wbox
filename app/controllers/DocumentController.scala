@@ -1,9 +1,11 @@
 package controllers
 
+import models.entities
 import models.entities.{Document, Mask, Release}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json.{JsString, JsValue, Json, Writes, _}
+import play.api.mvc.{AnyContent, Request}
 import reactivemongo.bson.BSONObjectID
 
 import scala.concurrent.Future
@@ -138,6 +140,15 @@ object DocumentController extends JsonSerializerController with Secured {
   }
 
   /**
+   * //todo: Wrap all requests to one pattern
+   * @param request
+   * @tparam T
+   */
+  def >>![T](implicit request : Request[AnyContent])={
+
+  }
+
+  /**
    *
    * Pooping document from release
    * @return
@@ -175,7 +186,31 @@ object DocumentController extends JsonSerializerController with Secured {
       case r: JsSuccess[ReleaseJson] =>
         Release.gen(maskId, user, r.get.publishDate, r.get.unpublishDate, r.get.name)
       case JsError(e) =>
-        Release.gen(maskId, user)
+        Release gen(maskId, user)
+    }).map {
+      case Some(release) =>
+        ok(Json.writes[Release].writes(release))
+      case None =>
+        bad("error save new release")
+    }
+  }
+
+  def updateRelease(id: String) = Auth.async() { user => implicit request =>
+    implicit val method = "releaseUpdate"
+    case class ReleaseJson(publishDate: Long, unpublishDate: Long, name: String) {}
+    //TODO: parse request body as tolerantJson
+    (request.body.asJson.getOrElse(Json.obj()).validate((
+      (__ \ "publishDate").read[Long] ~
+        (__ \ "unpublishDate").read[Long] ~
+        (__ \ "name").read[String]
+      )((pd, upd, name) =>
+        ReleaseJson(pd, upd, name)
+        Release update
+      )) match {
+      case r: JsSuccess[ReleaseJson] =>
+        Release.gen(maskId, user, r.get.publishDate, r.get.unpublishDate, r.get.name)
+      case JsError(e) =>
+        Release gen(maskId, user)
     }).map {
       case Some(release) =>
         ok(Json.writes[Release].writes(release))

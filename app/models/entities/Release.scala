@@ -140,10 +140,10 @@ object Release extends Entity[Release] {
       Document byId docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = r.id
-          d.name = d.name.map(_ +d.revision)
+          d.name = d.name.map(_ + d.revision)
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
-          Document update (d,user)
+          Document update(d, user)
         }.getOrElse(Future(None))
       }
     }
@@ -165,10 +165,43 @@ object Release extends Entity[Release] {
           d.release = None
           d.publishDate = None
           d.unpublishDate = None
-          Document update (d,user)
+          Document update(d, user)
         }.getOrElse(Future(None))
       }
     }
   }
+
+  /**
+   * Update release. Update - is create new release in DB.?????
+   * @param rel
+   * @param user
+   * @return
+   */
+  def update(rel: Release, user: User) = {
+    rel.user = user.id
+    insert(rel)
+  }
+
+  /**
+   *
+   * @param id
+   * @param name
+   * @param pd
+   * @param upd
+   * @param user
+   * @return
+   */
+  def update(id: String,name: String,pd: Long,upd: Long,user: User): Future[Option[Release]]={
+    byId(id).flatMap{
+      case Some(rel) =>
+        rel.name = Some(name)
+        rel.publishDate = Some(pd)
+        rel.unpublishDate = Some(upd)
+        update(rel,user)
+      case None =>
+        Future.successful(None)
+    }
+  }
+
 
 }
