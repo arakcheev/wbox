@@ -2,7 +2,7 @@ package models.entities
 
 import models.SecureGen
 import models.db.{MongoDB, MongoConnection}
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONObjectID}
 
 import scala.concurrent.Future

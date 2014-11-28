@@ -2,7 +2,6 @@ package models.entities
 
 import models.db.MongoDB
 import org.joda.time.DateTime
-import reactivemongo.api.BSONSerializationPack.Writer
 import reactivemongo.bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -167,8 +166,8 @@ object EntityRW extends MapRW {
     def read(doc: BSONDocument): Mask = {
       Mask(
         doc.getAs[BSONObjectID]("_id"),
-        doc.getAs[String]("name").getOrElse(""),
-        doc.getAs[String]("title").getOrElse(""),
+        doc.getAs[String]("name"),
+        doc.getAs[String]("title"),
         doc.getAs[BSONDocument]("params").map(docs =>
           docs.elements.map {
             tuple =>
@@ -183,7 +182,7 @@ object EntityRW extends MapRW {
 
   implicit object MaskWriter extends BSONDocumentWriter[Mask] {
     def write(doc: Mask): BSONDocument = BSONDocument(
-      "_id" -> doc.id.getOrElse(BSONObjectID.generate),
+      "_id" -> doc.id,
       "name" -> doc.name,
       "title" -> doc.title,
       "params" -> doc.params,

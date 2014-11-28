@@ -6,7 +6,7 @@ import play.api.Logger
 import play.api.libs.Crypto
 import play.api.libs.json.{JsString, Json}
 import play.api.mvc.RequestHeader
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
 import reactivemongo.core.commands.LastError
 

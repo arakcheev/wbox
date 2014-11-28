@@ -1,7 +1,7 @@
 package models.db
 
 import models.Configuration
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.collections.default.BSONCollection
 
 /**
  * Created by artem on 23.11.14.

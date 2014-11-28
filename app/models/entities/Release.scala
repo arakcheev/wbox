@@ -2,7 +2,7 @@ package models.entities
 
 import models.db.MongoConnection
 import org.joda.time.DateTime
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 
 import scala.concurrent.Future
@@ -134,7 +134,7 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def pushDoc(releaseId: String, docUUID: String, user: User) = {
+  def pushDoc(releaseId: String, docUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
       Document byId docUUID flatMap { document =>
@@ -143,7 +143,7 @@ object Release extends Entity[Release] {
           d.name = d.name.map(_ + d.revision)
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
-          Document update(d, user)
+          Document update d
         }.getOrElse(Future(None))
       }
     }
@@ -157,7 +157,7 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def popDoc(releaseId: String, docUUID: String, user: User) = {
+  def popDoc(releaseId: String, docUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
       Document byId docUUID flatMap { document =>
@@ -165,7 +165,7 @@ object Release extends Entity[Release] {
           d.release = None
           d.publishDate = None
           d.unpublishDate = None
-          Document update(d, user)
+          Document update d
         }.getOrElse(Future(None))
       }
     }
@@ -192,6 +192,7 @@ object Release extends Entity[Release] {
    * @return
    */
   def update(id: String,name: String,pd: Long,upd: Long,user: User): Future[Option[Release]]={
+    import scala.concurrent.ExecutionContext.Implicits.global
     byId(id).flatMap{
       case Some(rel) =>
         rel.name = Some(name)

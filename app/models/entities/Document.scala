@@ -3,7 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
-import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
 
 import scala.concurrent.Future
@@ -19,7 +19,7 @@ case class Document(var id: Option[BSONObjectID], var name: Option[String], var 
 
 }
 
-case class Mask(id: Option[BSONObjectID], var name: String, var title: String,
+case class Mask(var id: Option[BSONObjectID], var name: Option[String], var title: Option[String],
                 var params: Map[String, String], repo: String, status: Int) {
 
 }
@@ -31,11 +31,11 @@ object Mask extends Entity[Mask] {
   override val collection: BSONCollection = MongoConnection.db.collection("mask")
 
   def empty(name: String, repo: String, title: String, params: Map[String, String]) = {
-    Mask(Some(BSONObjectID.generate), name, title, params, repo, 1)
+    Mask(Some(BSONObjectID.generate), Some(name), Some(title), params, repo, 1)
   }
 
   def newMask(name: String, repo: String, title: String, params: Map[String, String]) = {
-    val mask = Mask(Some(BSONObjectID.generate), name, title, params, repo, 1)
+    val mask = Mask(Some(BSONObjectID.generate), Some(name), Some(title), params, repo, 1)
     insert(mask)
   }
 
@@ -43,11 +43,25 @@ object Mask extends Entity[Mask] {
     save(mask, MaskWriter)
   }
 
-  def byId(id: String) = {
+  /**
+   * Find one mask by BSONObjectID
+   * @param bsonId
+   * @return
+   */
+  def byId(bsonId: BSONObjectID): Future[Option[Mask]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
+    collection.find(BSONDocument("_id" -> bsonId)).one[Mask]
+  }
+
+  /**
+   * Find one mask by string representation of BSONObjectId
+   * @param id
+   * @return
+   */
+  def byId(id: String): Future[Option[Mask]] = {
     BSONObjectID.parse(id) match {
       case Success(bsonId) =>
-        collection.find(BSONDocument("_id" -> bsonId)).one[Mask]
+        byId(bsonId)
       case Failure(e) =>
         Future.successful(None)
     }
@@ -56,6 +70,44 @@ object Mask extends Entity[Mask] {
   def list(repo: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("repo" -> repo)).cursor[Mask].collect[List]()
+  }
+
+  /**
+   * Update current mask. Find mask with such ObjectID and update all other fields.
+   * @param mask
+   * @param user
+   * @return
+   */
+  def update(mask: Mask)(implicit user: User): Future[Option[Mask]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val selector = BSONDocument("_id" -> mask.id.get)
+    mask.id = None
+    //    mask.user = user.id
+    collection.update(selector, BSONDocument(
+      "$set" -> MaskWriter.write(mask)
+    )).map { wr => Some(mask)}
+  }
+
+  def update(id: String, name: String, title: String, params: Map[String, String])(implicit user: User): Future[Option[Mask]] = {
+    BSONObjectID.parse(id) match {
+      case Success(bsonId) =>
+        update(bsonId, name, title, params)
+      case Failure(e) =>
+        Future.successful(None)
+    }
+  }
+
+  def update(bsonId: BSONObjectID, name: String, title: String, params: Map[String, String])(implicit user: User): Future[Option[Mask]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(bsonId).flatMap {
+      case Some(mask) =>
+        mask.name = Some(name)
+        mask.title = Some(title)
+        mask.params = params
+        update(mask)
+      case None =>
+        Future.successful(None)
+    }
   }
 
 }
@@ -141,7 +193,7 @@ object Document extends Entity[Document] {
    * @param doc
    * @return
    */
-  def update(doc: Document, user: User): Future[Option[Document]] = {
+  def update(doc: Document)(implicit user: User): Future[Option[Document]] = {
     doc.id = Some(BSONObjectID.generate)
     doc.revision = doc.revision.map(_ + 1)
     doc.date = DateTime.now().getMillis
@@ -149,11 +201,24 @@ object Document extends Entity[Document] {
     insert(doc)
   }
 
+  def update(uuid: String, name: String, params: Map[String, String])(implicit user: User): Future[Option[Document]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(uuid).flatMap {
+      case Some(doc) =>
+        doc.name = Some(name)
+        doc.params = params
+        update(doc)
+      case None =>
+        Future.successful(None)
+    }
+  }
+
 
   /**
    * this method return list of documents with same uuid. this list indicates history of document changing
    */
   def history(uuid: String) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).cursor[Document].collect[List]()
   }
 
