@@ -10,9 +10,22 @@ import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONOb
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-/**
- * Created by artem on 23.11.14.
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 case class Repository(var id: Option[BSONObjectID], var name: Option[String], var status: Int, var user: Option[BSONObjectID],
                       var uuid: Option[String], var revision: Option[Int], var date: Option[Long]) {
 
@@ -91,6 +104,7 @@ object Repository extends Entity[Repository] {
    * @param user
    * @return
    */
+  //todo: Revision on deletion multi docs
   def update(repo: Repository, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Repository]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     repo.user = user.id

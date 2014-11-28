@@ -21,7 +21,7 @@ import play.api.libs.json.{Json, _}
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//TODO: permission to creation repo
 object RepositoryController extends JsonSerializerController with Secured {
 
   /**

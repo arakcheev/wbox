@@ -43,36 +43,6 @@ object DocumentController extends JsonSerializerController with Secured {
   }
 
   /**
-   * TODO: permission to creation repo
-   * TODO: field type (number,email,text,id,????)
-   * @param repo
-   * @return
-   */
-  def newMask(repo: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "newMask"
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, title: String, params: Map[String, String]) =>
-      Mask gen(name, repo, title, params)
-      ))
-  }
-
-  def updateMask(id: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "maskEdit"
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, title: String, params: Map[String, String]) =>
-      Mask update(id, name, title, params)
-      ))
-  }
-
-  def deleteMask(id: String) = ???
-
-  /**
    *
    * @param maskId
    * @return

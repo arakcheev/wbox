@@ -3,7 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Play, Logger}
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 
@@ -27,7 +27,7 @@ import scala.util.{Failure, Success}
  */
 
 case class Mask(var id: Option[BSONObjectID], var name: Option[String], var title: Option[String],
-                var params: Map[String, String], var repo: Option[BSONObjectID], status: Int, var uuid: Option[String],
+                var params: Map[String, String], var repo: Option[BSONObjectID], var status: Int, var uuid: Option[String],
                 var revision: Option[Int], var user: Option[BSONObjectID], var date: Option[Long]) {
 
 }
@@ -54,7 +54,7 @@ object Mask extends Entity[Mask] {
   }
 
   /**
-   * Shotcut method for generate new mask by params and save it.
+   * Shortcut method for generate new mask by params and save it.
    * @param name
    * @param repo
    * @param title
@@ -94,7 +94,8 @@ object Mask extends Entity[Mask] {
    * @param user
    * @return
    */
-  def update(mask: Mask, genNew: Boolean = true)(implicit user: User): Future[Option[Mask]] = {
+  //todo: Revision on deletion multi docs
+  def update(mask: Mask, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Mask]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     mask.user = user.id
     mask.revision = mask.revision.map(_ + 1)
@@ -104,10 +105,15 @@ object Mask extends Entity[Mask] {
       insert(mask)
     } else {
       val _id = mask.id
+      val selector = if (multi) {
+        BSONDocument("uuid" -> mask.uuid)
+      } else {
+        BSONDocument("_id" -> _id)
+      }
       mask.id = None
-      collection.update(BSONDocument("_id" -> _id), BSONDocument(
+      collection.update(selector, BSONDocument(
         "$set" -> MaskWriter.write(mask)
-      )).map { wr =>
+      ), multi = multi).map { wr =>
         if (wr.inError) {
           Logger.logger.error(s"Error updating document (${getClass.getName}}) in MongoDB. More info: ${wr.message}")
           None
@@ -200,6 +206,34 @@ object Mask extends Entity[Mask] {
   def list(repo: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("repo" -> repo)).cursor[Mask].collect[List]()
+  }
+
+  /**
+   * Delete mask.
+   * If Mode is ''Test'' then delete from DB, otherwise set status
+   * @param id
+   */
+  def del(id: String)(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(id).flatMap {
+      case Some(mask) =>
+        import Play.current
+        if (Play.isTest) {
+          collection.remove(BSONDocument("_id" -> mask.id)).map { le =>
+            if (le.inError) {
+              Logger.logger.error(s"Error deleting document (${getClass.getName}}) in MongoDB. More info: ${le.message}")
+              None
+            } else {
+              Some(mask)
+            }
+          }
+        } else {
+          mask.status = -1
+          update(mask, genNew = false, multi = true)
+        }
+      case None =>
+        Future.successful(None)
+    }
   }
 
 }
