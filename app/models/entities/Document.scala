@@ -3,6 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
+import play.api.Logger
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
 
@@ -29,11 +30,12 @@ object Document extends Entity[Document] {
    * Generate empty Document
    * @return
    */
-  def empty() = Document(id = Some(BSONObjectID.generate), None, None, Map.empty, DateTime.now().getMillis, 1, None,
-    None, None, None, None, uuid = Some(SecureGen.nextSessionId()))
+  def empty() = Document(id = Some(BSONObjectID.generate), name = None, mask = None, params = Map.empty,
+    date = DateTime.now().getMillis, status = 1, publishDate = None, unpublishDate = None, release = None,
+    user = None, revision = None, uuid = Some(SecureGen.nextSessionId()))
 
   /**
-   * Generate Document by set of parameters
+   * Generate Document by set of parameters and save it
    * @param maskId
    * @param name
    * @param params
@@ -57,7 +59,6 @@ object Document extends Entity[Document] {
 
   /**
    * Insert new doc
-   * TODO: update is it method?
    * @param doc
    * @return
    */
@@ -70,7 +71,7 @@ object Document extends Entity[Document] {
    * @param uuid
    * @return
    */
-  def byId(uuid: String) = {
+  def byUUID(uuid: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).one[Document]
   }
@@ -96,21 +97,39 @@ object Document extends Entity[Document] {
   }
 
   /**
-   * Update Document. This updated currently saved doc in DB
+   * Update Document. This updated currently saved doc in DB with new revision
+   * Method or update current doc or create new doc with updated fields.
    * @param doc
    * @return
    */
-  def update(doc: Document)(implicit user: User): Future[Option[Document]] = {
-    doc.id = Some(BSONObjectID.generate)
+  def update(doc: Document, genNew: Boolean = true)(implicit user: User): Future[Option[Document]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     doc.revision = doc.revision.map(_ + 1)
     doc.date = DateTime.now().getMillis
     doc.user = user.id
-    insert(doc)
+    if (genNew) {
+      doc.id = Some(BSONObjectID.generate)
+      insert(doc)
+    } else {
+      val _id = doc.id
+      doc.id = None
+      collection.update(BSONDocument("_id" -> _id), BSONDocument(
+        "$set" -> DocumentWriter.write(doc)
+      )).map { wr =>
+        if (wr.inError) {
+          Logger.logger.error(s"Error updating document (${getClass.getName}}) in MongoDB. More info: ${wr.message}")
+          None
+        } else {
+          Some(doc)
+        }
+      }
+    }
+
   }
 
   def update(uuid: String, name: String, params: Map[String, String])(implicit user: User): Future[Option[Document]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    byId(uuid).flatMap {
+    byUUID(uuid).flatMap {
       case Some(doc) =>
         doc.name = Some(name)
         doc.params = params

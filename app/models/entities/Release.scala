@@ -139,7 +139,7 @@ object Release extends Entity[Release] {
   def pushDoc(releaseId: String, docUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
-      Document byId docUUID flatMap { document =>
+      Document byUUID docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = r.id
           d.name = d.name.map(_ + d.revision)
@@ -162,7 +162,7 @@ object Release extends Entity[Release] {
   def popDoc(releaseId: String, docUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
-      Document byId docUUID flatMap { document =>
+      Document byUUID docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = None
           d.publishDate = None

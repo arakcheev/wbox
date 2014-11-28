@@ -37,7 +37,7 @@ object DocumentController extends JsonSerializerController with Secured {
    */
   def byId(uuid: String) = Auth.async(parse.anyContent) { user => implicit request =>
     implicit val method = "docsByUUID"
-    Document.byId(uuid).map { mayBeDoc =>
+    Document.byUUID(uuid).map { mayBeDoc =>
       ok(Json.toJson(mayBeDoc.map(d => List(d)).getOrElse(Nil)))
     }
   }

@@ -3,6 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
+import play.api.Logger
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 
@@ -88,7 +89,7 @@ object Mask extends Entity[Mask] {
 
   /**
    * Update current mask. Find mask with such ObjectID and update all other fields.
-   * Method or update current doc or create new doc with updated fields.
+   * Method or update current mask or create new mask with updated fields.
    * @param mask
    * @param user
    * @return
@@ -102,11 +103,13 @@ object Mask extends Entity[Mask] {
       mask.id = Some(BSONObjectID.generate)
       insert(mask)
     } else {
+      val _id = mask.id
       mask.id = None
-      collection.update(BSONDocument("_id" -> mask.id.get), BSONDocument(
+      collection.update(BSONDocument("_id" -> _id), BSONDocument(
         "$set" -> MaskWriter.write(mask)
       )).map { wr =>
         if (wr.inError) {
+          Logger.logger.error(s"Error updating document (${getClass.getName}}) in MongoDB. More info: ${wr.message}")
           None
         } else {
           Some(mask)
