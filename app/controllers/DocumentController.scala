@@ -136,7 +136,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def newRelease(maskId: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "releaseNew"
+    implicit val method = request.uri
     !>>((
       (__ \ "publishDate").readNullable[Long] ~
         (__ \ "unpublishDate").readNullable[Long] ~

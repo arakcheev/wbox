@@ -33,6 +33,7 @@ trait JsonSerializerController extends Controller  with Writers{
    * @tparam T
    */
   def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T], method: String) = {
+    //todo method from request
     import scala.concurrent.ExecutionContext.Implicits.global
     request.body.asJson.getOrElse(Json.obj()).validate(reads) match {
       case d: JsSuccess[Future[Option[T]]] =>

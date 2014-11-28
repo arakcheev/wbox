@@ -175,7 +175,11 @@ object EntityRW extends MapRW {
           }.toMap
         ).getOrElse(Map.empty),
         doc.getAs[BSONObjectID]("repo"),
-        doc.getAs[Int]("status").getOrElse(0)
+        doc.getAs[Int]("status").getOrElse(0),
+        doc.getAs[String]("uuid"),
+        doc.getAs[Int]("revision"),
+        doc.getAs[BSONObjectID]("user"),
+        doc.getAs[BSONDateTime]("date").map(_.value)
       )
     }
   }
@@ -187,7 +191,11 @@ object EntityRW extends MapRW {
       "title" -> doc.title,
       "params" -> doc.params,
       "repo" -> doc.repo,
-      "status" -> BSONInteger(doc.status)
+      "status" -> BSONInteger(doc.status),
+      "uuid" -> doc.uuid,
+      "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of mask. This value cannot be None
+      "user" -> doc.user,
+      "date" -> doc.date.map(BSONDateTime)
     )
   }
 
