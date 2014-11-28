@@ -14,8 +14,9 @@ POST        /releases/documents/add                     controllers.DocumentCont
 POST        /mask/new                                   controllers.DocumentController.newMask(repo: String)
 
 GET         /repository/list                            controllers.RepositoryController.list
-GET         /repository/delete                          controllers.RepositoryController.delete(id: String)
+POST        /repository/delete                          controllers.RepositoryController.delete(id: String)
 POST        /repository/new                             controllers.RepositoryController.newRepo(name: String)
+POST        /repository/update                          controllers.RepositoryController.update(id: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                               controllers.Assets.at(path="/public", file)

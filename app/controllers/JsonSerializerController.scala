@@ -47,8 +47,9 @@ trait JsonSerializerController extends Controller with Writers {
    * @param request
    * @tparam T
    */
-  def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T], method: String) = {
+  def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T]) = {
     //todo method from request
+    implicit val method = request.uri
     import scala.concurrent.ExecutionContext.Implicits.global
     request.body.asJson.getOrElse(Json.obj()).validate(reads) match {
       case d: JsSuccess[Future[Option[T]]] =>

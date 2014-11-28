@@ -24,7 +24,7 @@ object Repository extends Entity[Repository] {
 
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
-  def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = None, revision = None,
+  def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None,
     Some(DateTime.now().getMillis))
 
   /**
@@ -117,6 +117,17 @@ object Repository extends Entity[Repository] {
           Some(repo)
         }
       }
+    }
+  }
+
+  def update(id: String, name: String)(implicit user: User): Future[Option[Repository]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(id).flatMap {
+      case Some(repo) =>
+        repo.name = Some(name)
+        update(repo)
+      case None =>
+        Future.successful(None)
     }
   }
 

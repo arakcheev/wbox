@@ -79,11 +79,11 @@ object EntityRW extends MapRW {
 
   implicit object RepositoryWriter extends BSONDocumentWriter[Repository] {
     def write(doc: Repository): BSONDocument = BSONDocument(
-      "_id" -> doc.id.getOrElse(BSONObjectID.generate),
+      "_id" -> doc.id,
       "name" -> doc.name,
       "status" -> BSONInteger(doc.status),
       "user" -> doc.user,
-      "uuid" -> doc.user,
+      "uuid" -> doc.uuid,
       "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
       "date" -> doc.date.map(BSONDateTime)
     )
@@ -93,7 +93,7 @@ object EntityRW extends MapRW {
   implicit object UserWriter extends BSONDocumentWriter[User] {
     def write(user: User): BSONDocument = {
       BSONDocument(
-        "_id" -> user.id.getOrElse(BSONObjectID.generate),
+        "_id" -> user.id,
         "uuid" -> user.uuid.getOrElse(""),
         "email" -> user.email.getOrElse(""),
         "password" -> user.password.getOrElse(""),
