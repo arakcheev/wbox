@@ -1,7 +1,9 @@
 package models.entities
 
+import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
+import play.api.Logger
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 
@@ -12,8 +14,8 @@ import scala.util.{Failure, Success}
  * Created by artem on 25.11.14.
  */
 case class Release(var id: Option[BSONObjectID], var name: Option[String], var publishDate: Option[Long],
-                   var unpublishDate: Option[Long],
-                   var mask: Option[BSONObjectID], var user: Option[BSONObjectID]) {
+                   var unpublishDate: Option[Long], var mask: Option[BSONObjectID], var user: Option[BSONObjectID],
+                   var uuid: Option[String], var revision: Option[Int], var date: Option[Long]) {
 
 }
 
@@ -27,12 +29,12 @@ object Release extends Entity[Release] {
    * Generate empty Release
    * @return
    */
-  def empty(): Release = Release(Some(BSONObjectID.generate), None, None, None, None, None)
+  def empty(): Release = Release(id = Some(BSONObjectID.generate), name = None, publishDate = None, unpublishDate = None,
+    mask = None, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None, date = Some(DateTime.now().getMillis))
 
   /**
    * Generate new release by params
    *
-   * //todo this method saves release. Need some wrapper with Release method to move matching functionality from controllers
    * @param maskId
    * @param user
    * @return
@@ -40,7 +42,7 @@ object Release extends Entity[Release] {
   @deprecated("use gen(maskId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)" +
     "(implicit user: User) instead", "29.11.14")
   def gen(maskId: String, user: User): Future[Option[Release]] = {
-    val r = Release.empty
+    val r = empty()
     BSONObjectID.parse(maskId).map { id =>
       r.mask = Some(id)
       r.user = user.id
@@ -81,7 +83,6 @@ object Release extends Entity[Release] {
 
   /**
    * Insert new relese
-   * //TODO: update is it method?
    * @param rel
    * @return
    */
@@ -105,7 +106,7 @@ object Release extends Entity[Release] {
   }
 
   /**
-   * List all releases by mask id
+   * List all releases with the same mask id
    * @param maskId
    * @return
    */
@@ -124,7 +125,7 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def list(user: User) = {
+  def list(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("user" -> user.id)).cursor[Release].collect[List]()
   }
@@ -142,7 +143,7 @@ object Release extends Entity[Release] {
       Document byUUID docUUID flatMap { document =>
         document.zip(release).headOption.map { case (d, r) =>
           d.release = r.id
-          d.name = d.name.map(_ + d.revision)
+          d.name = d.name
           d.publishDate = r.publishDate
           d.unpublishDate = r.unpublishDate
           Document update d
@@ -153,12 +154,12 @@ object Release extends Entity[Release] {
 
   /**
    * Pop document from release
-   * //TODO: publish and unpublish date of documents after pop from release
    * @param releaseId
    * @param docUUID
    * @param user
    * @return
    */
+  //todo: publish and unpublish date of documents after pop from release
   def popDoc(releaseId: String, docUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(releaseId).flatMap { release =>
@@ -174,14 +175,34 @@ object Release extends Entity[Release] {
   }
 
   /**
-   * Update release. Update - is create new release in DB.?????
+   * Update release.
+   * Method or update current mask or create new mask with updated fields.
    * @param rel
    * @param user
    * @return
    */
-  def update(rel: Release)(implicit  user: User) = {
+  def update(rel: Release, genNew: Boolean = true)(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
     rel.user = user.id
-    insert(rel)
+    rel.revision = rel.revision.map(_ + 1)
+    rel.date = Some(DateTime.now().getMillis)
+    if (genNew) {
+      rel.id = Some(BSONObjectID.generate)
+      insert(rel)
+    } else {
+      val _id = rel.id
+      rel.id = None
+      collection.update(BSONDocument("_id" -> _id), BSONDocument(
+        "$set" -> ReleaseWriter.write(rel)
+      )).map { wr =>
+        if (wr.inError) {
+          Logger.logger.error(s"Error updating document (${getClass.getName}}) in MongoDB. More info: ${wr.message}")
+          None
+        } else {
+          Some(rel)
+        }
+      }
+    }
   }
 
   /**
