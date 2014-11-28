@@ -2,6 +2,7 @@ package models.entities
 
 import models.SecureGen
 import models.db.{MongoDB, MongoConnection}
+import org.joda.time.DateTime
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONObjectID}
 
@@ -11,7 +12,8 @@ import scala.util.{Failure, Success}
 /**
  * Created by artem on 23.11.14.
  */
-case class Repository(id: Option[BSONObjectID], name: String, status: Int, user: String, uuid: String) {
+case class Repository(var id: Option[BSONObjectID], var name: Option[String], var status: Int, var user: Option[BSONObjectID],
+                      var uuid: Option[String], var revision: Option[Int], var date: Option[Long]) {
 
 }
 
@@ -21,15 +23,23 @@ object Repository extends Entity[Repository] {
 
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
+  def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = None, revision = None,
+    Some(DateTime.now().getMillis))
+
   /**
    * Saves new repository
    * @param repo
    * @return
    */
   def insert(repo: Repository) = {
-    save(repo,RepositoryWriter)
+    save(repo, RepositoryWriter)
   }
 
+  /**
+   * Find repo by ObjectId<id>
+   * @param id
+   * @return
+   */
   def byId(id: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     BSONObjectID.parse(id) match {
@@ -40,13 +50,29 @@ object Repository extends Entity[Repository] {
     }
   }
 
-  def list(user: User) = {
+  /**
+   * Find repo with uuid and max revision
+   * @param uuid
+   * @return
+   */
+  def byUUID(uuid: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("user" -> user.id.get.stringify)).cursor[Repository].collect[List]()
+    collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).one[Repository]
   }
 
+  /**
+   * List of all user repositories
+   * @param user
+   * @return
+   */
+  def list(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    collection.find(BSONDocument("user" -> user.id)).cursor[Repository].collect[List]()
+  }
+
+  @deprecated("Use empty() method instead", "28.11.14")
   def apply(name: String, user: User): Repository = {
-    Repository(Some(BSONObjectID.generate), name, 1, user.id.get.stringify, SecureGen.nextSessionId())
+    empty()
   }
 
 }

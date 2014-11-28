@@ -67,10 +67,12 @@ object EntityRW extends MapRW {
     def read(doc: BSONDocument): Repository = {
       Repository(
         doc.getAs[BSONObjectID]("_id"),
-        doc.getAs[String]("name").getOrElse(""),
+        doc.getAs[String]("name"),
         doc.getAs[Int]("status").getOrElse(0),
-        doc.getAs[String]("user").getOrElse(""),
-        doc.getAs[String]("uuid").getOrElse("")
+        doc.getAs[BSONObjectID]("user"),
+        doc.getAs[String]("uuid"),
+        doc.getAs[Int]("revision"),
+        doc.getAs[BSONDateTime]("date").map(_.value)
       )
     }
   }
@@ -81,7 +83,9 @@ object EntityRW extends MapRW {
       "name" -> doc.name,
       "status" -> BSONInteger(doc.status),
       "user" -> doc.user,
-      "uuid" -> doc.user
+      "uuid" -> doc.user,
+      "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
+      "date" -> doc.date.map(BSONDateTime)
     )
   }
 
@@ -207,7 +211,10 @@ object EntityRW extends MapRW {
         doc.getAs[BSONDateTime]("publishDate").map(_.value),
         doc.getAs[BSONDateTime]("unpublishDate").map(_.value),
         doc.getAs[BSONObjectID]("mask"),
-        doc.getAs[BSONObjectID]("user")
+        doc.getAs[BSONObjectID]("user"),
+        doc.getAs[String]("uuid"),
+        doc.getAs[Int]("revision"),
+        doc.getAs[BSONDateTime]("date").map(_.value)
       )
     }
   }
@@ -219,7 +226,10 @@ object EntityRW extends MapRW {
       "publishDate" -> BSONDateTime(rel.publishDate.getOrElse(DateTime.now().getMillis)),
       "unpublishDate" -> BSONDateTime(rel.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
       "mask" -> rel.mask,
-      "user" -> rel.user
+      "user" -> rel.user,
+      "uuid" -> rel.uuid,
+      "revision" -> BSONInteger(rel.revision.getOrElse(1)), //need to increment revision of mask. This value cannot be None
+      "date" -> rel.date.map(BSONDateTime)
     )
   }
 
