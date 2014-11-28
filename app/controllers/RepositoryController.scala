@@ -39,5 +39,7 @@ object RepositoryController extends JsonSerializerController with Secured {
     !>>(Repository gen name)
   }
 
-
+  def delete(id: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+    !>>(Repository del id)
+  }
 }

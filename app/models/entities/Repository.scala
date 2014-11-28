@@ -3,6 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.{MongoDB, MongoConnection}
 import org.joda.time.DateTime
+import play.api.{Logger, Play}
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONObjectID}
 
@@ -81,6 +82,70 @@ object Repository extends Entity[Repository] {
   def list(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("user" -> user.id)).cursor[Repository].collect[List]()
+  }
+
+  /**
+   * Update current repo. Find repo with such ObjectID and update all other fields.
+   * Method or update current repo or create new repo with updated fields.
+   * @param repo
+   * @param user
+   * @return
+   */
+  def update(repo: Repository, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Repository]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    repo.user = user.id
+    repo.revision = repo.revision.map(_ + 1)
+    repo.date = Some(DateTime.now().getMillis)
+    if (genNew) {
+      repo.id = Some(BSONObjectID.generate)
+      insert(repo)
+    } else {
+      val _id = repo.id
+      val selector = if (multi) {
+        BSONDocument("uuid" -> repo.uuid)
+      } else {
+        BSONDocument("_id" -> _id)
+      }
+      repo.id = None
+      collection.update(selector, BSONDocument(
+        "$set" -> RepositoryWriter.write(repo)
+      ), multi = multi).map { wr =>
+        if (wr.inError) {
+          Logger.logger.error(s"Error updating document (${getClass.getName}}) in MongoDB. More info: ${wr.message}")
+          None
+        } else {
+          Some(repo)
+        }
+      }
+    }
+  }
+
+  /**
+   * Delete repository.
+   * If Mode is ''Test'' then delete from DB, otherwise set status 
+   * @param id
+   */
+  def del(id: String)(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byId(id).flatMap {
+      case Some(repo) =>
+        import Play.current
+        if (Play.isTest) {
+          collection.remove(BSONDocument("_id" -> repo.id)).map { le =>
+            if (le.inError) {
+              Logger.logger.error(s"Error deleting document (${getClass.getName}}) in MongoDB. More info: ${le.message}")
+              None
+            } else {
+              Some(repo)
+            }
+          }
+        } else {
+          repo.status = -1
+          update(repo, genNew = false, multi = true)
+        }
+      case None =>
+        Future.successful(None)
+    }
   }
 
 }
