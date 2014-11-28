@@ -9,19 +9,17 @@ import reactivemongo.bson.BSONObjectID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Application extends JsonSerializerController with Secured {
-//  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
-//    def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
-//  }
+  //  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
+  //    def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
+  //  }
 
-//  implicit val documentWriter = Json.writes[Mask]
+  //  implicit val documentWriter = Json.writes[Mask]
 
-//  implicit val documentWriter2 = Json.writes[Document]
+  //  implicit val documentWriter2 = Json.writes[Document]
 
 
-  def index = Auth.async(){ implicit user => implicit request =>
-    Repository.del("5478e9b9afc633960287548f").map { s =>
-      Ok(s+"")
-    }
+  def index = Auth.auth() { implicit user => implicit request =>
+    Ok(views.html.index(""))
   }
 
   def login() = Action.async { implicit request =>

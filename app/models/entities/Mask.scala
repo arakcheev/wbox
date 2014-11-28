@@ -95,10 +95,14 @@ object Mask extends Entity[Mask] {
    * @return
    */
   //todo: Revision on deletion multi docs
-  def update(mask: Mask, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Mask]] = {
+  def update(mask: Mask, genNew: Boolean = true, multi: Boolean = false, deleted: Boolean = false)(implicit user: User): Future[Option[Mask]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     mask.user = user.id
-    mask.revision = mask.revision.map(_ + 1)
+    if (!deleted) {
+      mask.revision = mask.revision.map(_ + 1)
+    } else {
+      mask.revision = None
+    }
     mask.date = Some(DateTime.now().getMillis)
     if (genNew) {
       mask.id = Some(BSONObjectID.generate)
@@ -200,12 +204,13 @@ object Mask extends Entity[Mask] {
 
   /**
    * List of masks in repository
-   * @param repo
+   * @param repo must be uuid of repository
    * @return
    */
+  //todo move ObjectId tp uuid
   def list(repo: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("repo" -> repo)).cursor[Mask].collect[List]()
+    collection.find(BSONDocument("repo" -> BSONObjectID.parse(repo).get)).cursor[Mask].collect[List]()
   }
 
   /**
@@ -229,7 +234,7 @@ object Mask extends Entity[Mask] {
           }
         } else {
           mask.status = -1
-          update(mask, genNew = false, multi = true)
+          update(mask, genNew = false, multi = true, deleted = true)
         }
       case None =>
         Future.successful(None)

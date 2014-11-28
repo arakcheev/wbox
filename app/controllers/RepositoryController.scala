@@ -1,10 +1,11 @@
 package controllers
 
-import scala.language.higherKinds
 import models.entities.{Repository => repo}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{Json, _}
+import play.api.libs.json._
+
+import scala.language.higherKinds
 
 /*
  * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
@@ -28,37 +29,28 @@ object RepositoryController extends JsonSerializerController with Secured {
    * List of user repositories
    * @return
    */
-  def list = Auth.async() { implicit user => implicit request =>
-    >>!(repo list)
-  }
+  def list = Auth.async() { implicit user => implicit request => >>!(repo list)}
 
   /**
    * Create new repository with name ${name}
    * @param name
    * @return
    */
-  def newRepo(name: String) = Auth.async() { implicit user => implicit request =>
-    !>>(repo gen name)
-  }
+  def newRepo(name: String) = Auth.async() { implicit user => implicit request => !>>(repo gen name)}
 
   /**
    * Delete repository by ObjectId
    * @param id
    * @return
    */
-  def delete(id: String) = Auth.async() { implicit user => implicit request =>
-    !>>(repo del id)
-  }
+  def delete(id: String) = Auth.async() { implicit user => implicit request => !>>(repo del id)}
 
   /**
    * Update repository with Json params
    * @param id
    * @return
    */
-  def update(id: String) = Auth.async() { implicit user => implicit request =>
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "ts").readNullable[Long] //todo: read not applied to single field ???
-      )((name: String, ts: Option[Long]) => repo update(id, name)))
+  def update(id: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(id, name)))
   }
 }

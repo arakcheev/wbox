@@ -210,7 +210,7 @@ object EntityRW extends MapRW {
         doc.getAs[String]("name"),
         doc.getAs[BSONDateTime]("publishDate").map(_.value),
         doc.getAs[BSONDateTime]("unpublishDate").map(_.value),
-        doc.getAs[BSONObjectID]("mask"),
+        doc.getAs[BSONObjectID]("repo"),
         doc.getAs[BSONObjectID]("user"),
         doc.getAs[String]("uuid"),
         doc.getAs[Int]("revision"),
@@ -225,7 +225,7 @@ object EntityRW extends MapRW {
       "name" -> rel.name,
       "publishDate" -> BSONDateTime(rel.publishDate.getOrElse(DateTime.now().getMillis)),
       "unpublishDate" -> BSONDateTime(rel.unpublishDate.getOrElse(DateTime.now().plusYears(10).getMillis)),
-      "mask" -> rel.mask,
+      "repo" -> rel.repo,
       "user" -> rel.user,
       "uuid" -> rel.uuid,
       "revision" -> BSONInteger(rel.revision.getOrElse(1)), //need to increment revision of mask. This value cannot be None

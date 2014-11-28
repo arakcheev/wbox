@@ -30,14 +30,8 @@ object MaskController extends JsonSerializerController with Secured {
    * @param repo
    * @return
    */
-  def gen(repo: String) = Auth.async() { implicit user => implicit request =>
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, title: String, params: Map[String, String]) =>
-      mask gen(name, repo, title, params)
-      ))
+  def gen(repo: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask gen(name, repo, title, params)))
   }
 
   /**
@@ -45,23 +39,15 @@ object MaskController extends JsonSerializerController with Secured {
    * @param repo
    * @return
    */
-  def list(repo: String) = Auth.async() { implicit user => implicit request =>
-    >>!(mask list repo)
-  }
+  def list(repo: String) = Auth.async() { implicit user => implicit request => >>!(mask list repo)}
 
   /**
    * Update mask by ObjectId
    * @param id
    * @return
    */
-  def update(id: String) = Auth.async() { implicit user => implicit request =>
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "title").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, title: String, params: Map[String, String]) =>
-      mask update(id, name, title, params)
-      ))
+  def update(id: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask update(id, name, title, params)))
   }
 
   /**
@@ -69,7 +55,5 @@ object MaskController extends JsonSerializerController with Secured {
    * @param id
    * @return
    */
-  def delete(id: String) = Auth.async() { implicit user => implicit request =>
-    !>>(mask del id)
-  }
+  def delete(id: String) = Auth.async() { implicit user => implicit request => !>>(mask del id)}
 }

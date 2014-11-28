@@ -1,131 +1,66 @@
 package controllers
 
-import models.entities.{Document, Mask, Release}
+import models.entities.{Document => doc}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{Json, _}
+import play.api.libs.json._
 
-/**
- * Created by artem on 23.11.14.
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
  *
- * TODO:
- * 1) delete docs
- * 2) delete mask
- * 3) delete release
- * 4) ???
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-object DocumentController extends JsonSerializerController with Secured {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
+//TODO: 1) delete docs 2) ???
+object DocumentController extends JsonSerializerController with Secured {
 
   /**
    * List of documents by maskId
    * @param maskId
    * @return
    */
-  def list(maskId: String) = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "docsList"
-    Document.list(maskId).map { docs =>
-      ok(Json.toJson(docs))
-    }
-  }
+  def list(maskId: String) = Auth.async(parse.anyContent) { implicit user => implicit request => >>!(doc list maskId)}
 
   /**
    * Get document by uuid
    * @param uuid
    * @return
    */
-  def byId(uuid: String) = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "docsByUUID"
-    Document.byUUID(uuid).map { mayBeDoc =>
-      ok(Json.toJson(mayBeDoc.map(d => List(d)).getOrElse(Nil)))
-    }
-  }
+  def byId(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request => !>>(doc byUUID uuid)}
 
   /**
    *
    * @param maskId
    * @return
    */
-  def newDoc(maskId: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "docsNew"
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, params: Map[String, String]) => {
-      Document gen(maskId, name, params)
-    }))
+  def newDoc(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc gen(maskId, name, params)))
   }
-
-  def updateDoc(uuid: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "docsUpdate"
-    !>>((
-      (__ \ "name").read[String] ~
-        (__ \ "params").read[Map[String, String]]
-      )((name: String, params: Map[String, String]) => {
-      Document update(uuid, name, params)
-    }))
-  }
-
-  def deleteDoc(uuid: String) = ???
-
-
-  /**
-   * Push document to release
-   * @return
-   */
-  def pushToRelease = Auth.async() { implicit user => implicit request =>
-    implicit val method = "docsPushToRelease"
-    !>>((
-      (__ \ "release").read[String] ~
-        (__ \ "doc").read[String]
-      )((releaseId, documentId) =>
-      Release pushDoc(releaseId, documentId)
-      ))
-  }
-
 
   /**
    *
-   * Pop document from release
+   * @param uuid
    * @return
    */
-  def popFromRelease = Auth.async() { implicit user => implicit request =>
-    implicit val method = "docsPopToRelease"
-    !>>((
-      (__ \ "release").read[String] ~
-        (__ \ "doc").read[String]
-      )((releaseId, documentId) =>
-      Release popDoc(releaseId, documentId)
-      ))
+  def updateDoc(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc update(uuid, name, params)))
   }
 
   /**
-   * Create new Release
-   * @param maskId
+   *
+   * @param uuid
    * @return
    */
-  def newRelease(maskId: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = request.uri
-    !>>((
-      (__ \ "publishDate").readNullable[Long] ~
-        (__ \ "unpublishDate").readNullable[Long] ~
-        (__ \ "name").read[String]
-      )((pd: Option[Long], upd: Option[Long], name: String) =>
-      Release gen(maskId, name, pd, upd)))
-  }
-
-  def updateRelease(id: String) = Auth.async() { implicit user => implicit request =>
-    implicit val method = "releaseUpdate"
-    !>>((
-      (__ \ "publishDate").read[Long] ~
-        (__ \ "unpublishDate").read[Long] ~
-        (__ \ "name").read[String]
-      )((pd: Long, upd: Long, name: String) =>
-      Release update(id, name, pd, upd)
-      ))
-  }
-
-  def deleteRelease(id: String) = ???
+  def deleteDoc(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc del uuid)}
 
 }

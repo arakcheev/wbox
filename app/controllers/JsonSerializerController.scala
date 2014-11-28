@@ -42,7 +42,7 @@ trait JsonSerializerController extends Controller with Writers {
 
   /**
    * //todo: Wrap all requests to one pattern
-   * //TODO: replace json reads/writes to Json.format
+   * //TODO: replace json reads/writes to Json format
    * //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
    * @param request
    * @tparam T

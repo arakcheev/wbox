@@ -3,7 +3,7 @@ package models.entities
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Play, Logger}
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
 
@@ -93,7 +93,7 @@ object Document extends Entity[Document] {
    */
   def list(maskId: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("mask" -> maskId)).cursor[Document].collect[List]()
+    collection.find(BSONDocument("mask" -> BSONObjectID(maskId))).cursor[Document].collect[List]()
   }
 
   /**
@@ -102,9 +102,13 @@ object Document extends Entity[Document] {
    * @param doc
    * @return
    */
-  def update(doc: Document, genNew: Boolean = true)(implicit user: User): Future[Option[Document]] = {
+  def update(doc: Document, genNew: Boolean = true, multi: Boolean = false, deleted: Boolean = false)(implicit user: User): Future[Option[Document]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    doc.revision = doc.revision.map(_ + 1)
+    if (!deleted) {
+      doc.revision = doc.revision.map(_ + 1)
+    } else {
+      doc.revision = None
+    }
     doc.date = DateTime.now().getMillis
     doc.user = user.id
     if (genNew) {
@@ -112,8 +116,13 @@ object Document extends Entity[Document] {
       insert(doc)
     } else {
       val _id = doc.id
+      val selector = if (multi) {
+        BSONDocument("uuid" -> doc.uuid)
+      } else {
+        BSONDocument("_id" -> _id)
+      }
       doc.id = None
-      collection.update(BSONDocument("_id" -> _id), BSONDocument(
+      collection.update(selector, BSONDocument(
         "$set" -> DocumentWriter.write(doc)
       )).map { wr =>
         if (wr.inError) {
@@ -146,6 +155,36 @@ object Document extends Entity[Document] {
   def history(uuid: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).cursor[Document].collect[List]()
+  }
+
+  /**
+   * Delete documents
+   * If Mode is ''Test'' then delete from DB, otherwise set status
+   * @param uuid
+   * @param user
+   * @return
+   */
+  def del(uuid: String)(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byUUID(uuid).flatMap {
+      case Some(doc) =>
+        import Play.current
+        if (Play.isTest) {
+          collection.remove(BSONDocument("_id" -> doc.id)).map { le =>
+            if (le.inError) {
+              Logger.logger.error(s"Error deleting document (${getClass.getName}}) in MongoDB. More info: ${le.message}")
+              None
+            } else {
+              Some(doc)
+            }
+          }
+        } else {
+          doc.status = -1
+          update(doc, genNew = false, multi = true, deleted = true)
+        }
+      case None =>
+        Future.successful(None)
+    }
   }
 
 }

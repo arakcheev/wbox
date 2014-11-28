@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
  * Created by artem on 25.11.14.
  */
 case class Release(var id: Option[BSONObjectID], var name: Option[String], var publishDate: Option[Long],
-                   var unpublishDate: Option[Long], var mask: Option[BSONObjectID], var user: Option[BSONObjectID],
+                   var unpublishDate: Option[Long], var repo: Option[BSONObjectID], var user: Option[BSONObjectID],
                    var uuid: Option[String], var revision: Option[Int], var date: Option[Long]) {
 
 }
@@ -30,7 +30,7 @@ object Release extends Entity[Release] {
    * @return
    */
   def empty(): Release = Release(id = Some(BSONObjectID.generate), name = None, publishDate = None, unpublishDate = None,
-    mask = None, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None, date = Some(DateTime.now().getMillis))
+    repo = None, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None, date = Some(DateTime.now().getMillis))
 
   /**
    * Generate new release by params
@@ -39,12 +39,12 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  @deprecated("use gen(maskId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)" +
+  @deprecated("use gen(repoId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)" +
     "(implicit user: User) instead", "29.11.14")
   def gen(maskId: String, user: User): Future[Option[Release]] = {
     val r = empty()
     BSONObjectID.parse(maskId).map { id =>
-      r.mask = Some(id)
+      r.repo = Some(id)
       r.user = user.id
       r
     } match {
@@ -64,10 +64,10 @@ object Release extends Entity[Release] {
    * @param name
    * @return
    */
-  def gen(maskId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)(implicit user: User): Future[Option[Release]] = {
+  def gen(repoId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)(implicit user: User): Future[Option[Release]] = {
     val r = empty()
-    BSONObjectID.parse(maskId).map { id =>
-      r.mask = Some(id)
+    BSONObjectID.parse(repoId).map { id =>
+      r.repo = Some(id)
       r.user = user.id
       r.publishDate = pd
       r.unpublishDate = upd
@@ -107,14 +107,14 @@ object Release extends Entity[Release] {
 
   /**
    * List all releases with the same mask id
-   * @param maskId
+   * @param repoId
    * @return
    */
-  def list(maskId: String) = {
+  def list(repoId: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    BSONObjectID.parse(maskId) match {
+    BSONObjectID.parse(repoId) match {
       case Success(bsonId) =>
-        collection.find(BSONDocument("mask" -> bsonId)).cursor[Release].collect[List]()
+        collection.find(BSONDocument("repo" -> bsonId)).cursor[Release].collect[List]()
       case Failure(e) =>
         Future.successful(Nil)
     }

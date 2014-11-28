@@ -1,23 +1,25 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
-GET         /login                                      controllers.Application.login
+GET         /login                      controllers.Application.login
 # Home page
-GET         /                                           controllers.Application.index
+GET         /                           controllers.Application.index
 
-POST        /mask/:maskId/documents/new                 controllers.DocumentController.newDoc(maskId: String)
+GET         /documents                  controllers.DocumentController.list(maskId: String)
+GET         /documents:uuid             controllers.DocumentController.byId(uuid: String)
+POST        /documents/new              controllers.DocumentController.newDoc(maskId: String)
+POST        /documents/update           controllers.DocumentController.updateDoc(uuid: String)
+POST        /documents/delete           controllers.DocumentController.deleteDoc(uuid: String)
 
-POST        /mask/:maskId/documents/releases/new        controllers.DocumentController.newRelease(maskId: String)
+GET         /masks                      controllers.MaskController.list(repo: String)
+POST        /masks/new                  controllers.MaskController.gen(repo: String)
+POST        /masks/update               controllers.MaskController.update(id: String)
+POST        /masks/delete               controllers.MaskController.delete(id: String)
 
-POST        /releases/documents/add                     controllers.DocumentController.pushToRelease
-
-POST        /mask/new                                   controllers.DocumentController.newMask(repo: String)
-
-GET         /repository/list                            controllers.RepositoryController.list
-POST        /repository/delete                          controllers.RepositoryController.delete(id: String)
-POST        /repository/new                             controllers.RepositoryController.newRepo(name: String)
-POST        /repository/update                          controllers.RepositoryController.update(id: String)
+GET         /repositories               controllers.RepositoryController.list
+POST        /repositories/delete        controllers.RepositoryController.delete(id: String)
+POST        /repositories/new           controllers.RepositoryController.newRepo(name: String)
+POST        /repositories/update        controllers.RepositoryController.update(id: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                               controllers.Assets.at(path="/public", file)
-
+GET         /assets/*file               controllers.Assets.at(path="/public", file)
