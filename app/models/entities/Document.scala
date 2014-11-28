@@ -20,7 +20,7 @@ case class Document(var id: Option[BSONObjectID], var name: Option[String], var 
 }
 
 case class Mask(var id: Option[BSONObjectID], var name: Option[String], var title: Option[String],
-                var params: Map[String, String], repo: String, status: Int) {
+                var params: Map[String, String], var repo: Option[BSONObjectID], status: Int) {
 
 }
 
@@ -30,13 +30,38 @@ object Mask extends Entity[Mask] {
 
   override val collection: BSONCollection = MongoConnection.db.collection("mask")
 
-  def empty(name: String, repo: String, title: String, params: Map[String, String]) = {
-    Mask(Some(BSONObjectID.generate), Some(name), Some(title), params, repo, 1)
+  def empty() = {
+    Mask(Some(BSONObjectID.generate), None, None, Map.empty, None, 1)
   }
 
+  @deprecated("user empty or gen", "25.11.14")
   def newMask(name: String, repo: String, title: String, params: Map[String, String]) = {
-    val mask = Mask(Some(BSONObjectID.generate), Some(name), Some(title), params, repo, 1)
+    val mask = Mask(Some(BSONObjectID.generate), Some(name), Some(title), params, None, 1)
     insert(mask)
+  }
+
+  /**
+   * Shotcut method for generate new mask by params and save it.
+   * @param name
+   * @param repo
+   * @param title
+   * @param params
+   * @return
+   */
+  def gen(name: String, repo: String, title: String, params: Map[String, String]) = {
+    val mask = empty()
+    BSONObjectID.parse(repo).map { repoId =>
+      mask.repo = Some(repoId)
+      mask.name = Some(name)
+      mask.title = Some(title)
+      mask.params = params
+      mask
+    } match {
+      case Success(m) =>
+        insert(m)
+      case Failure(e) =>
+        Future.failed(e)
+    }
   }
 
   def insert(mask: Mask) = {
@@ -132,7 +157,7 @@ object Document extends Entity[Document] {
    * @param params
    * @return
    */
-  def gen(maskId: String, name: String, params: Map[String, String], user: User) = {
+  def gen(maskId: String, name: String, params: Map[String, String])(implicit user: User) = {
     val doc = empty()
     BSONObjectID.parse(maskId).map { id =>
       doc.mask = Some(id)

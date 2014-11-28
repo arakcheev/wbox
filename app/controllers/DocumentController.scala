@@ -91,44 +91,25 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def newMask(repo: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
-    implicit val method = "docsNewMask"
-    implicit val MaskJson = (
+    implicit val method = "newMask"
+    !>>((
       (__ \ "name").read[String] ~
         (__ \ "title").read[String] ~
         (__ \ "params").read[Map[String, String]]
-      )((name, title, params) => Mask.empty(name, repo, title, params))
-    //TODO: replace json reads/writes to Json.format
-    //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
-    request.body.asJson.getOrElse(Json.obj()).validate(MaskJson) match {
-      case m: JsSuccess[Mask] =>
-        Mask.insert(m.get).map { _ =>
-          ok(Json.toJson(m.get))
-        }
-      case JsError(e) =>
-        futureBad(s"error parse json. ${e}")
-    }
+      )((name: String, title: String, params: Map[String, String]) =>
+      Mask gen(name, repo, title, params)
+      ))
   }
 
   def updateMask(id: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
-    implicit val method = "docsMaskEdit"
-    implicit val MaskJson = (
+    implicit val method = "maskEdit"
+    !>>((
       (__ \ "name").read[String] ~
         (__ \ "title").read[String] ~
         (__ \ "params").read[Map[String, String]]
-      )((name, title, params) => Mask.update(id, name, title, params))
-    //TODO: replace json reads/writes to Json.format
-    //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
-    request.body.asJson.getOrElse(Json.obj()).validate(MaskJson) match {
-      case m: JsSuccess[Future[Option[Mask]]] =>
-        m.get.map {
-          case Some(mask) =>
-            ok(Json.toJson(mask))
-          case None =>
-            bad("Error update mask")
-        }
-      case JsError(e) =>
-        futureBad(s"error parse json. ${e}")
-    }
+      )((name: String, title: String, params: Map[String, String]) =>
+      Mask update(id, name, title, params)
+      ))
   }
 
   /**
@@ -138,71 +119,37 @@ object DocumentController extends JsonSerializerController with Secured {
    */
   def newDoc(maskId: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
     implicit val method = "docsNew"
-    request.body.asJson.getOrElse(Json.obj()).validate((
+    !>>((
       (__ \ "name").read[String] ~
         (__ \ "params").read[Map[String, String]]
-      )((name, params) => {
-      Document gen(maskId, name, params, user)
-    })) match {
-      case d: JsSuccess[Future[Option[Document]]] =>
-        d.get.map {
-          case Some(doc) =>
-            ok(Json.toJson(doc))
-          case None =>
-            bad("Error save new document")
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }
+      )((name: String, params: Map[String, String]) => {
+      Document gen(maskId, name, params)
+    }))
   }
 
-  def updateDoc(uuid: String) = Auth.async(parse.anyContent) {implicit user => implicit request =>
+  def updateDoc(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
     implicit val method = "docsUpdate"
-    request.body.asJson.getOrElse(Json.obj()).validate((
+    !>>((
       (__ \ "name").read[String] ~
         (__ \ "params").read[Map[String, String]]
-      )((name, params) => {
+      )((name: String, params: Map[String, String]) => {
       Document update(uuid, name, params)
-    })) match {
-      case d: JsSuccess[Future[Option[Document]]] =>
-        d.get.map {
-          case Some(doc) =>
-            ok(Json.toJson(doc))
-          case None =>
-            bad("Error update document")
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }
+    }))
   }
 
-  /**
-   * //todo: Wrap all requests to one pattern
-   * @param request
-   * @tparam T
-   */
-  def !>>[T](implicit request: Request[AnyContent]): Future[Result] = {
-    ???
-  }
 
   /**
    * Push document to release
    * @return
    */
   def pushToRelease = Auth.async() { implicit user => implicit request =>
-    request.body.asJson.getOrElse(Json.obj()).validate((
+    implicit val method = "docsPushToRelease"
+    !>>((
       (__ \ "release").read[String] ~
         (__ \ "doc").read[String]
-      )((releaseId, documentId) => {
+      )((releaseId, documentId) =>
       Release pushDoc(releaseId, documentId)
-    })) match {
-      case d: JsSuccess[Future[Option[Document]]] =>
-        d.get.map { doc =>
-          ok(Json toJson doc)
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }
+      ))
   }
 
 
@@ -212,19 +159,13 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def popFromRelease = Auth.async() { implicit user => implicit request =>
-    request.body.asJson.getOrElse(Json.obj()).validate((
+    implicit val method = "docsPopToRelease"
+    !>>((
       (__ \ "release").read[String] ~
         (__ \ "doc").read[String]
-      )((releaseId, documentId) => {
+      )((releaseId, documentId) =>
       Release popDoc(releaseId, documentId)
-    })) match {
-      case d: JsSuccess[Future[Option[Document]]] =>
-        d.get.map { doc =>
-          ok(Json toJson doc)
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }
+      ))
   }
 
   /**
@@ -234,45 +175,23 @@ object DocumentController extends JsonSerializerController with Secured {
    */
   def newRelease(maskId: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "releaseNew"
-    case class ReleaseJson(publishDate: Long, unpublishDate: Long, name: String) {}
-    //TODO: parse request body as tolerantJson
-    (request.body.asJson.getOrElse(Json.obj()).validate((
-      (__ \ "publishDate").read[Long] ~
-        (__ \ "unpublishDate").read[Long] ~
+    !>>((
+      (__ \ "publishDate").readNullable[Long] ~
+        (__ \ "unpublishDate").readNullable[Long] ~
         (__ \ "name").read[String]
-      )((pd, upd, name) => ReleaseJson(pd, upd, name))) match {
-      case r: JsSuccess[ReleaseJson] =>
-        Release.gen(maskId, user, r.get.publishDate, r.get.unpublishDate, r.get.name)
-      case JsError(e) =>
-        Release gen(maskId, user)
-    }).map {
-      case Some(release) =>
-        ok(Json.toJson(release))
-      case None =>
-        bad("error save new release")
-    }
+      )((pd: Option[Long], upd: Option[Long], name: String) =>
+      Release gen(maskId, name, pd, upd)))
   }
 
-  //TODO: parse request body as tolerantJson
   def updateRelease(id: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "releaseUpdate"
-    request.body.asJson.getOrElse(Json.obj()).validate((
+    !>>((
       (__ \ "publishDate").read[Long] ~
         (__ \ "unpublishDate").read[Long] ~
         (__ \ "name").read[String]
-      )((pd, upd, name) =>
-      entities.Release.update(id, name, pd, upd, user)
-      )) match {
-      case r: JsSuccess[Future[Option[Release]]] =>
-        r.get.map {
-          case Some(release) =>
-            ok(Json.toJson(release))
-          case None =>
-            bad("error updating release")
-        }
-      case JsError(e) =>
-        futureBad("error parse json")
-    }
+      )((pd: Long, upd: Long, name: String) =>
+      Release update(id, name, pd, upd)
+      ))
   }
 
 }

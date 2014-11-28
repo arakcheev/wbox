@@ -2,9 +2,9 @@ package controllers
 
 
 import models.entities.User
-import play.api.Logger
-import play.api.mvc.{BodyParser, Action, Request}
-import play.api.mvc.Result
+import play.api.libs.json._
+import play.api.mvc._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -38,7 +38,6 @@ trait Secured {
         }.recover(recover)
       }
     }
-
 
   }
 

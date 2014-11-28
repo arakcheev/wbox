@@ -174,7 +174,7 @@ object EntityRW extends MapRW {
               tuple._1 -> tuple._2.seeAsTry[String].get
           }.toMap
         ).getOrElse(Map.empty),
-        doc.getAs[String]("repo").getOrElse(""),
+        doc.getAs[BSONObjectID]("repo"),
         doc.getAs[Int]("status").getOrElse(0)
       )
     }

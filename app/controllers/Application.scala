@@ -18,11 +18,17 @@ object Application extends Controller {
   implicit val documentWriter2 = Json.writes[Document]
 
 
-  def index = Action.async {
+  def index = Action.async { implicit request =>
     User.byId("54664063920000f600b2c23e").map(_.get).flatMap { implicit user =>
-      Document.update("qrsn3k32qp6paml76jetqesm1v","Doc2",Map("footer" -> "text 2")).map{d =>
-          Ok(Json.toJson(d.get))
-        }
+      DocumentController.newMask("5474c80dafc633720194e801").apply(request).map { r =>
+        r
+      }
+    }
+  }
+
+  def login() = Action.async { implicit request =>
+    User.byId("54664063920000f600b2c23e").map(_.get).map { implicit user =>
+      Ok("").withCookies(Cookie(User.COOKIE_EMAIL, user.uuid.get, Some(86400)), Cookie(User.COOKIE_AUTH, user.uuid.get))
     }
   }
 

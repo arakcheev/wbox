@@ -1,7 +1,7 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
-
+GET         /login                                      controllers.Application.login
 # Home page
 GET         /                                           controllers.Application.index
 

@@ -37,6 +37,8 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
+  @deprecated("use gen(maskId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)" +
+    "(implicit user: User) instead", "29.11.14")
   def gen(maskId: String, user: User): Future[Option[Release]] = {
     val r = Release.empty
     BSONObjectID.parse(maskId).map { id =>
@@ -60,13 +62,13 @@ object Release extends Entity[Release] {
    * @param name
    * @return
    */
-  def gen(maskId: String, user: User, pd: Long, upd: Long, name: String): Future[Option[Release]] = {
-    val r = Release.empty
+  def gen(maskId: String, name: String, pd: Option[Long] = None, upd: Option[Long] = None)(implicit user: User): Future[Option[Release]] = {
+    val r = empty()
     BSONObjectID.parse(maskId).map { id =>
       r.mask = Some(id)
       r.user = user.id
-      r.publishDate = Some(pd)
-      r.unpublishDate = Some(upd)
+      r.publishDate = pd
+      r.unpublishDate = upd
       r.name = Some(name)
       r
     } match {
@@ -177,7 +179,7 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def update(rel: Release, user: User) = {
+  def update(rel: Release)(implicit  user: User) = {
     rel.user = user.id
     insert(rel)
   }
@@ -191,14 +193,14 @@ object Release extends Entity[Release] {
    * @param user
    * @return
    */
-  def update(id: String,name: String,pd: Long,upd: Long,user: User): Future[Option[Release]]={
+  def update(id: String, name: String, pd: Long, upd: Long)(implicit user: User): Future[Option[Release]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    byId(id).flatMap{
+    byId(id).flatMap {
       case Some(rel) =>
         rel.name = Some(name)
         rel.publishDate = Some(pd)
         rel.unpublishDate = Some(upd)
-        update(rel,user)
+        update(rel)
       case None =>
         Future.successful(None)
     }

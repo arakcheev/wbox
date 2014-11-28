@@ -1,7 +1,7 @@
 package controllers
 
-import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Result, Controller}
+import play.api.libs.json._
+import play.api.mvc.{AnyContent, Request, Result, Controller}
 
 import scala.concurrent.Future
 
@@ -21,6 +21,25 @@ trait JsonSerializerController extends Controller {
       } else {
         bad("Internal server error")
       }
+  }
+
+  /**
+   * //todo: Wrap all requests to one pattern
+   * //TODO: replace json reads/writes to Json.format
+   * //TODO: test shows that parse.tolerantJson will get invalid Json bad request.
+   * @param request
+   * @tparam T
+   */
+  def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T],method: String) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    request.body.asJson.getOrElse(Json.obj()).validate(reads) match {
+      case d: JsSuccess[Future[Option[T]]] =>
+        d.get.map { doc =>
+          ok(Json toJson doc)
+        }
+      case JsError(e) =>
+        futureBad(s"Error parse json. ${e}")
+    }
   }
 
 
