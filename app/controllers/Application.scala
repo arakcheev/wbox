@@ -1,6 +1,6 @@
 package controllers
 
-import models.entities.{User, Release, Document}
+import models.entities.{Mask, User, Release, Document}
 import play.api._
 import play.api.libs.json.{Json, JsString, JsValue, Writes}
 import play.api.mvc._
@@ -13,14 +13,16 @@ object Application extends Controller {
     def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
   }
 
-  implicit val documentWriter = Json.writes[Document]
+  implicit val documentWriter = Json.writes[Mask]
+
+  implicit val documentWriter2 = Json.writes[Document]
+
 
   def index = Action.async {
-    User.byId("54664063920000f600b2c23e").flatMap {
-      user =>
-      Release.pushDoc("5474e0d890000090002a6b99","4qohq01csi4ek3js8n38vdhjk2",user.get).map{d =>
-        Ok(Json.toJson(d.get))
-      }
+    User.byId("54664063920000f600b2c23e").map(_.get).flatMap { implicit user =>
+      Document.update("qrsn3k32qp6paml76jetqesm1v","Doc2",Map("footer" -> "text 2")).map{d =>
+          Ok(Json.toJson(d.get))
+        }
     }
   }
 
