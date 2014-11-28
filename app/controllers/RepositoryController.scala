@@ -1,38 +1,42 @@
 package controllers
 
 import models.entities.Repository
-import play.api.libs.json.{JsString, Json, JsValue, Writes}
-import play.api.mvc.{Action, Controller}
 
-/**
- * Created by artem on 23.11.14.
+import scala.language.higherKinds
+
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 object RepositoryController extends JsonSerializerController with Secured {
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  implicit val writes = new Writes[Repository] {
-    def writes(repo: Repository): JsValue = Json.obj(
-      "id" -> JsString(repo.id.map(_.stringify).getOrElse("")),
-      "name" -> repo.name,
-      "status" -> repo.status,
-      "user" -> repo.user
-    )
+  /**
+   * List of user repositories
+   * @return
+   */
+  def list = Auth.async(parse.anyContent) { implicit user => implicit request =>
+    >>!(Repository list)
   }
 
-  def list = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "repoList"
-    Repository.list(user).map { repos =>
-      ok(Json.toJson(repos))
-    }.recover(recover)
-  }
-
-  def newRepo(name: String) = Auth.async(parse.anyContent) { user => implicit request =>
-    implicit val method = "repoCreate"
-    val repo = Repository(name, user)
-    Repository.insert(repo).map { _ =>
-      ok(Json.toJson(repo))
-    }
+  /**
+   * Create new repository with name ${name}
+   * @param name
+   * @return
+   */
+  def newRepo(name: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+    !>>(Repository gen name)
   }
 
 

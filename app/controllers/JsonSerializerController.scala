@@ -1,16 +1,31 @@
 package controllers
 
-import models.entities.{Mask, Release, Document}
+import models.entities._
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request, Result, Controller}
 import reactivemongo.bson.BSONObjectID
 
+import scala.collection.{Traversable, GenTraversable}
 import scala.concurrent.Future
+import scala.language.higherKinds
 
-/**
- * Created by artem on 23.11.14.
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-trait JsonSerializerController extends Controller  with Writers{
+
+trait JsonSerializerController extends Controller with Writers {
 
   import play.api.Play.current
   import play.api.http.ContentTypes
@@ -42,6 +57,38 @@ trait JsonSerializerController extends Controller  with Writers{
         }
       case JsError(e) =>
         futureBad(s"Error parse json. ${e}")
+    }
+  }
+
+  /**
+   * Wrap all actions with Traversable[T] model result
+   * @param obj
+   * @param request
+   * @param format
+   * @tparam T
+   * @return
+   */
+  def >>![T](obj: Future[Traversable[T]])(implicit request: Request[AnyContent], format: Writes[T]) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    implicit val method = request.uri
+    obj map { o =>
+      ok(Json toJson o)
+    }
+  }
+
+  /**
+   * Wrap all actions with Option[T] type model result
+   * @param obj
+   * @param request
+   * @param format
+   * @tparam T
+   * @return
+   */
+  def !>>[T](obj: Future[Option[T]])(implicit request: Request[AnyContent], format: Writes[T]) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    implicit val method = request.uri
+    obj map { o =>
+      ok(Json toJson o)
     }
   }
 
@@ -95,4 +142,6 @@ trait Writers {
   implicit val releaseWriter = Json.writes[Release]
 
   implicit val maskWriter = Json.writes[Mask]
+
+  implicit val repositoryWriter = Json.writes[Repository]
 }

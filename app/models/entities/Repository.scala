@@ -27,6 +27,19 @@ object Repository extends Entity[Repository] {
     Some(DateTime.now().getMillis))
 
   /**
+   * Generate new repo by name and save it.
+   * @param name
+   * @param user
+   * @return
+   */
+  def gen(name: String)(implicit user: User) = {
+    val repo = empty()
+    repo.user = user.id
+    repo.name = Some(name)
+    insert(repo)
+  }
+
+  /**
    * Saves new repository
    * @param repo
    * @return
@@ -68,11 +81,6 @@ object Repository extends Entity[Repository] {
   def list(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("user" -> user.id)).cursor[Repository].collect[List]()
-  }
-
-  @deprecated("Use empty() method instead", "28.11.14")
-  def apply(name: String, user: User): Repository = {
-    empty()
   }
 
 }

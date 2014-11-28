@@ -13,6 +13,7 @@ POST        /releases/documents/add                     controllers.DocumentCont
 
 POST        /mask/new                                   controllers.DocumentController.newMask(repo: String)
 
+GET         /repository/list                            controllers.RepositoryController.list
 POST        /repository/new                             controllers.RepositoryController.newRepo(name: String)
 
 # Map static resources from the /public folder to the /assets URL path
