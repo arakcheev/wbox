@@ -1,63 +1,22 @@
 package controllers
 
-import models.entities
 import models.entities.{Document, Mask, Release}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{JsString, JsValue, Json, Writes, _}
-import play.api.mvc.{AnyContent, Request}
-import play.mvc.Result
-import reactivemongo.bson.BSONObjectID
-
-import scala.concurrent.Future
+import play.api.libs.json.{Json, _}
 
 /**
  * Created by artem on 23.11.14.
  *
  * TODO:
  * 1) delete docs
- * 2) edit docs
- * 3) save new docs
- * 4) edit mask
- * 5) delete mask
- * 6) releases
- * 7) ???
+ * 2) delete mask
+ * 3) delete release
+ * 4) ???
  */
 object DocumentController extends JsonSerializerController with Secured {
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
-  implicit val bsonIdWrites = new Writes[reactivemongo.bson.BSONObjectID] {
-    def writes(bson: BSONObjectID): JsValue = JsString(bson.stringify)
-  }
-
-  implicit val documentWriter = Json.writes[Document]
-
-  implicit val releaseWriter = Json.writes[Release]
-
-  @deprecated("Use macros", "25.11.14")
-  implicit val writes = new Writes[Document] {
-    def writes(doc: Document): JsValue = Json.obj(
-      "id" -> JsString(doc.id.map(_.stringify).getOrElse("")),
-      "name" -> doc.name,
-      "status" -> doc.status,
-      "params" -> doc.params,
-      "mask" -> doc.mask,
-      "date" -> doc.date
-    )
-  }
-
-  @deprecated("Use macros", "25.11.14")
-  implicit val maskWrites = new Writes[Mask] {
-    def writes(doc: Mask): JsValue = Json.obj(
-      "id" -> JsString(doc.id.map(_.stringify).getOrElse("")),
-      "name" -> doc.name,
-      "status" -> doc.status,
-      "params" -> doc.params,
-      "title" -> doc.title,
-      "repo" -> doc.repo
-    )
-  }
 
   /**
    * List of documents by maskId
@@ -70,7 +29,6 @@ object DocumentController extends JsonSerializerController with Secured {
       ok(Json.toJson(docs))
     }
   }
-
 
   /**
    * Get document by uuid
@@ -90,7 +48,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param repo
    * @return
    */
-  def newMask(repo: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+  def newMask(repo: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "newMask"
     !>>((
       (__ \ "name").read[String] ~
@@ -101,7 +59,7 @@ object DocumentController extends JsonSerializerController with Secured {
       ))
   }
 
-  def updateMask(id: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+  def updateMask(id: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "maskEdit"
     !>>((
       (__ \ "name").read[String] ~
@@ -112,12 +70,14 @@ object DocumentController extends JsonSerializerController with Secured {
       ))
   }
 
+  def deleteMask(id: String) = ???
+
   /**
    *
    * @param maskId
    * @return
    */
-  def newDoc(maskId: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+  def newDoc(maskId: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "docsNew"
     !>>((
       (__ \ "name").read[String] ~
@@ -127,7 +87,7 @@ object DocumentController extends JsonSerializerController with Secured {
     }))
   }
 
-  def updateDoc(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request =>
+  def updateDoc(uuid: String) = Auth.async() { implicit user => implicit request =>
     implicit val method = "docsUpdate"
     !>>((
       (__ \ "name").read[String] ~
@@ -136,6 +96,8 @@ object DocumentController extends JsonSerializerController with Secured {
       Document update(uuid, name, params)
     }))
   }
+
+  def deleteDoc(uuid: String) = ???
 
 
   /**
@@ -155,7 +117,7 @@ object DocumentController extends JsonSerializerController with Secured {
 
   /**
    *
-   * Pooping document from release
+   * Pop document from release
    * @return
    */
   def popFromRelease = Auth.async() { implicit user => implicit request =>
@@ -193,5 +155,7 @@ object DocumentController extends JsonSerializerController with Secured {
       Release update(id, name, pd, upd)
       ))
   }
+
+  def deleteRelease(id: String) = ???
 
 }
