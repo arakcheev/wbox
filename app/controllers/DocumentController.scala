@@ -21,7 +21,7 @@ import play.api.libs.json._
  * limitations under the License.
  */
 
-//TODO: 1) delete docs 2) ???
+//TODO: 2) history 3) favorites 4) tags 5)
 object DocumentController extends JsonSerializerController with Secured {
 
   /**
@@ -62,5 +62,10 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def delete(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc del uuid)}
+
+  /**
+   * Return history of changes of document
+   */
+  def history(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc history uuid)}
 
 }
