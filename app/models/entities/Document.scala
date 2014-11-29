@@ -41,7 +41,8 @@ object Document extends Entity[Document] {
    * @param params
    * @return
    */
-  def gen(maskId: String, name: String, params: Map[String, String], tags: List[String])(implicit user: User) = {
+  def gen(maskId: String, name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
+          upd: Option[Long])(implicit user: User) = {
     val doc = empty()
     BSONObjectID.parse(maskId).map { id =>
       doc.mask = Some(id)
@@ -49,6 +50,8 @@ object Document extends Entity[Document] {
       doc.params = params
       doc.user = user.id
       doc.tags = Some(tags)
+      doc.publishDate = pd
+      doc.unpublishDate = upd
       doc
     } match {
       case Success(r) =>
@@ -137,13 +140,16 @@ object Document extends Entity[Document] {
 
   }
 
-  def update(uuid: String, name: String, params: Map[String, String],tags: List[String])(implicit user: User): Future[Option[Document]] = {
+  def update(uuid: String, name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
+             upd: Option[Long])(implicit user: User): Future[Option[Document]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(doc) =>
         doc.name = Some(name)
         doc.params = params
         doc.tags = Some(tags)
+        doc.publishDate = pd
+        doc.unpublishDate = upd
         update(doc)
       case None =>
         Future.successful(None)

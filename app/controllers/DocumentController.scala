@@ -21,7 +21,7 @@ import play.api.libs.json._
  * limitations under the License.
  */
 
-//TODO: 3) favorites
+//TODO: 3) favorites 4 attachments
 object DocumentController extends JsonSerializerController with Secured {
 
   /**
@@ -44,7 +44,8 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def gen(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]])((name: String, params: Map[String, String], tags: List[String]) => doc gen(maskId, name, params, tags)))
+    (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
+    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long], upd: Option[Long]) => doc gen(maskId, name, params, tags, pd, upd)))
   }
 
   /**
@@ -53,7 +54,8 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "params").read[Map[String, String]]~ (__ \ "tags").read[List[String]])((name: String, params: Map[String, String],tags: List[String]) => doc update(uuid, name, params, tags)))
+    (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
+    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long], upd: Option[Long]) => doc update(uuid, name, params, tags, pd, upd)))
   }
 
   /**
