@@ -36,14 +36,14 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param uuid
    * @return
    */
-  def byId(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request => !>>(doc byUUID uuid)}
+  def byuuid(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request => !>>(doc byUUID uuid)}
 
   /**
    *
    * @param maskId
    * @return
    */
-  def newDoc(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+  def gen(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc gen(maskId, name, params)))
   }
 
@@ -52,7 +52,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param uuid
    * @return
    */
-  def updateDoc(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+  def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc update(uuid, name, params)))
   }
 
@@ -61,6 +61,6 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param uuid
    * @return
    */
-  def deleteDoc(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc del uuid)}
+  def delete(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc del uuid)}
 
 }

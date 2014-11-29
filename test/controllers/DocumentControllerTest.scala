@@ -60,7 +60,7 @@ class DocumentControllerTest extends Specification {
           "cost" -> "number"
         )
       )).withHeaders("Content-Type" -> "text/javascript")
-      val docResult = controllers.DocumentController.newDoc(maskId)(docRequest)
+      val docResult = controllers.DocumentController.gen(maskId)(docRequest)
       Logger.logger.debug(s"Doc result is ${contentAsString(docResult)}")
       docId = contentAsJson(docResult).\("result").as[JsArray].value(0).\("data").\("uuid").as[String]
       docId must !==("")

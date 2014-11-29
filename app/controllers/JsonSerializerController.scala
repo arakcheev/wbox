@@ -77,7 +77,7 @@ trait JsonSerializerController extends Controller with Writers {
   }
 
   /**
-   * Wrap all actions with Option[T] type model result
+   * Wrap all actions with Option[T]  model result
    * @param obj
    * @param request
    * @param format
