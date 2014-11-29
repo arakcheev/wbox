@@ -66,6 +66,6 @@ object DocumentController extends JsonSerializerController with Secured {
   /**
    * Return history of changes of document
    */
-  def history(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc history uuid)}
+  def history(uuid: String) = Auth.async() { implicit user => implicit request => >>!(doc history uuid)}
 
 }
