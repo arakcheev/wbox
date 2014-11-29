@@ -21,7 +21,7 @@ import play.api.libs.json._
  * limitations under the License.
  */
 
-//TODO: 2) history 3) favorites 4) tags 5)
+//TODO: 3) favorites
 object DocumentController extends JsonSerializerController with Secured {
 
   /**
@@ -44,7 +44,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def gen(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc gen(maskId, name, params)))
+    (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]])((name: String, params: Map[String, String], tags: List[String]) => doc gen(maskId, name, params, tags)))
   }
 
   /**
@@ -53,7 +53,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @return
    */
   def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "params").read[Map[String, String]])((name: String, params: Map[String, String]) => doc update(uuid, name, params)))
+    (__ \ "params").read[Map[String, String]]~ (__ \ "tags").read[List[String]])((name: String, params: Map[String, String],tags: List[String]) => doc update(uuid, name, params, tags)))
   }
 
   /**

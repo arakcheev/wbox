@@ -16,7 +16,7 @@ import scala.util.{Failure, Success}
 case class Document(var id: Option[BSONObjectID], var name: Option[String], var mask: Option[BSONObjectID],
                     var params: Map[String, String], var date: Long, var status: Int,
                     var publishDate: Option[Long], var unpublishDate: Option[Long], var release: Option[BSONObjectID],
-                    var user: Option[BSONObjectID], var revision: Option[Int], var uuid: Option[String]) {
+                    var user: Option[BSONObjectID], var revision: Option[Int], var uuid: Option[String], var tags: Option[List[String]]) {
 
 }
 
@@ -32,7 +32,7 @@ object Document extends Entity[Document] {
    */
   def empty() = Document(id = Some(BSONObjectID.generate), name = None, mask = None, params = Map.empty,
     date = DateTime.now().getMillis, status = 1, publishDate = None, unpublishDate = None, release = None,
-    user = None, revision = None, uuid = Some(SecureGen.nextSessionId()))
+    user = None, revision = None, uuid = Some(SecureGen.nextSessionId()), tags = None)
 
   /**
    * Generate Document by set of parameters and save it
@@ -41,13 +41,14 @@ object Document extends Entity[Document] {
    * @param params
    * @return
    */
-  def gen(maskId: String, name: String, params: Map[String, String])(implicit user: User) = {
+  def gen(maskId: String, name: String, params: Map[String, String], tags: List[String])(implicit user: User) = {
     val doc = empty()
     BSONObjectID.parse(maskId).map { id =>
       doc.mask = Some(id)
       doc.name = Some(name)
       doc.params = params
       doc.user = user.id
+      doc.tags = Some(tags)
       doc
     } match {
       case Success(r) =>
@@ -136,12 +137,13 @@ object Document extends Entity[Document] {
 
   }
 
-  def update(uuid: String, name: String, params: Map[String, String])(implicit user: User): Future[Option[Document]] = {
+  def update(uuid: String, name: String, params: Map[String, String],tags: List[String])(implicit user: User): Future[Option[Document]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(doc) =>
         doc.name = Some(name)
         doc.params = params
+        doc.tags = Some(tags)
         update(doc)
       case None =>
         Future.successful(None)

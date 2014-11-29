@@ -143,7 +143,8 @@ object EntityRW extends MapRW {
         doc.getAs[BSONObjectID]("release"),
         doc.getAs[BSONObjectID]("user"),
         doc.getAs[Int]("revision"),
-        doc.getAs[String]("uuid")
+        doc.getAs[String]("uuid"),
+        doc.getAs[List[String]]("tags")
       )
     }
   }
@@ -161,7 +162,8 @@ object EntityRW extends MapRW {
       "release" -> doc.release,
       "user" -> doc.user,
       "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
-      "uuid" -> doc.uuid
+      "uuid" -> doc.uuid,
+      "tags" -> doc.tags
     )
   }
 
