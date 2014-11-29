@@ -144,4 +144,7 @@ trait Writers {
   implicit val maskWriter = Json.writes[Mask]
 
   implicit val repositoryWriter = Json.writes[Repository]
+
+  implicit val attachmentWriter = Json.writes[Attachment]
+
 }

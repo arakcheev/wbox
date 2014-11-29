@@ -22,5 +22,10 @@ POST        /repositories/delete           controllers.RepositoryController.dele
 POST        /repositories/new              controllers.RepositoryController.newRepo(name: String)
 POST        /repositories/update           controllers.RepositoryController.update(id: String)
 
+GET         /att:repo                      controllers.AttachmentController.list(repo: String)
+POST        /att/new                       controllers.AttachmentController.gen
+POST        /att/update                    controllers.AttachmentController.update
+POST        /att/del:uuid                  controllers.AttachmentController.del(uuid: String)
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                  controllers.Assets.at(path="/public", file)

@@ -36,6 +36,8 @@ object Mask extends Entity[Mask] {
 
   import models.entities.EntityRW._
 
+  override type TT = Mask
+
   override val collection: BSONCollection = MongoConnection.db.collection("mask")
 
   /**

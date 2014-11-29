@@ -45,7 +45,8 @@ object DocumentController extends JsonSerializerController with Secured {
    */
   def gen(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
-    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long], upd: Option[Long]) => doc gen(maskId, name, params, tags, pd, upd)))
+    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
+                                      upd: Option[Long]) => doc gen(maskId, name, params, tags, pd, upd)))
   }
 
   /**
@@ -55,7 +56,8 @@ object DocumentController extends JsonSerializerController with Secured {
    */
   def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
-    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long], upd: Option[Long]) => doc update(uuid, name, params, tags, pd, upd)))
+    (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
+                                      upd: Option[Long]) => doc update(uuid, name, params, tags, pd, upd)))
   }
 
   /**

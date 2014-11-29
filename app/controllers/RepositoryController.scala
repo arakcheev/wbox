@@ -53,4 +53,6 @@ object RepositoryController extends JsonSerializerController with Secured {
   def update(id: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(id, name)))
   }
+
+
 }

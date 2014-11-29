@@ -18,7 +18,7 @@ import scala.concurrent.Future
  */
 case class User(var id: Option[BSONObjectID], var uuid: Option[String], var email: Option[String],
                 var password: Option[String], var creditCards: Option[BSONArray], var account: Option[BSONDocument],
-                var avatar: Option[String], var status: Int, var subUser: Boolean, var users: Option[BSONArray]){
+                var avatar: Option[String], var status: Int, var subUser: Boolean, var users: Option[BSONArray]) {
 
   def getAccountAsJson = {
     account.map { doc =>
@@ -59,6 +59,8 @@ object User extends Entity[User] {
 
   import EntityRW._
 
+  override type TT = User
+
   override val collection: BSONCollection = MongoConnection.db.collection("user")
 
   val COOKIE_EMAIL = "u_e"
@@ -66,23 +68,23 @@ object User extends Entity[User] {
   val COOKIE_AUTH = "u_a"
 
 
-//  def registerNewUser(email: String, password: String) = {
-//    byEmail(email).flatMap {
-//      case Some(user) =>
-//        Future.successful(("", Some("User already exists")))
-//      case None =>
-//        val uuid = SecureGen.nextSessionId()
-//        //todo Crypto with shared key
-//        collection.save(User(None, Some(uuid), Some(email), Some(Crypto.encryptAES(password)), None, None, None, 1, false, None)).map { le =>
-//          if (le.inError) {
-//            Logger.logger.error(s"Mongo error: ${le.message}")
-//            (uuid, Some("Internal server error"))
-//          } else {
-//            (uuid, None)
-//          }
-//        }
-//    }
-//  }
+  //  def registerNewUser(email: String, password: String) = {
+  //    byEmail(email).flatMap {
+  //      case Some(user) =>
+  //        Future.successful(("", Some("User already exists")))
+  //      case None =>
+  //        val uuid = SecureGen.nextSessionId()
+  //        //todo Crypto with shared key
+  //        collection.save(User(None, Some(uuid), Some(email), Some(Crypto.encryptAES(password)), None, None, None, 1, false, None)).map { le =>
+  //          if (le.inError) {
+  //            Logger.logger.error(s"Mongo error: ${le.message}")
+  //            (uuid, Some("Internal server error"))
+  //          } else {
+  //            (uuid, None)
+  //          }
+  //        }
+  //    }
+  //  }
 
   def byEmail(email: String) = {
     collection.find(BSONDocument(
@@ -176,9 +178,9 @@ object User extends Entity[User] {
     }
   }
 
-//  def uploadFile(user: User, file: File) = {
-//    S3.put(file, file.getName, "console/avatars")
-//  }
+  //  def uploadFile(user: User, file: File) = {
+  //    S3.put(file, file.getName, "console/avatars")
+  //  }
 
   /**
    * Change user password

@@ -23,6 +23,8 @@ object Release extends Entity[Release] {
 
   import EntityRW._
 
+  override type TT = Release
+
   override val collection: BSONCollection = MongoConnection.db.collection("releases")
 
   /**

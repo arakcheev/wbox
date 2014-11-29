@@ -35,6 +35,9 @@ object Repository extends Entity[Repository] {
 
   import EntityRW._
 
+  override type TT = Repository
+
+
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
   def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None,

@@ -12,6 +12,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 trait Entity[E] extends MongoDB {
   self =>
 
+  type TT
+
 
   /**
    * TODO: broadcast fields to all entities
@@ -232,6 +234,38 @@ object EntityRW extends MapRW {
       "uuid" -> rel.uuid,
       "revision" -> BSONInteger(rel.revision.getOrElse(1)), //need to increment revision of mask. This value cannot be None
       "date" -> rel.date.map(BSONDateTime)
+    )
+  }
+
+  implicit object AttachmentReader extends BSONDocumentReader[Attachment] {
+    def read(doc: BSONDocument): Attachment = {
+      val att = Attachment.empty()
+      att.id = doc.getAs[BSONObjectID]("_id")
+      att.name = doc.getAs[String]("name")
+      att.entity = doc.getAs[String]("entity")
+      att.url = doc.getAs[String]("url")
+      att.status = doc.getAs[Int]("status")
+      att.user = doc.getAs[String]("user")
+      att.uuid = doc.getAs[String]("uuid")
+      att.revision = doc.getAs[Int]("revision")
+      att.date = doc.getAs[BSONDateTime]("date").map(_.value)
+      att.repo = doc.getAs[String]("entity")
+      att
+    }
+  }
+
+  implicit object AttachmentWriter extends BSONDocumentWriter[Attachment] {
+    def write(att: Attachment): BSONDocument = BSONDocument(
+      "_id" -> att.id,
+      "name" -> att.name,
+      "entity" -> att.entity,
+      "url" -> att.url,
+      "status" -> att.status,
+      "user" -> att.user,
+      "uuid" -> att.uuid,
+      "revision" -> BSONInteger(att.revision.getOrElse(1)), //need to increment revision of mask. This value cannot be None
+      "date" -> att.date.map(BSONDateTime),
+      "repo" -> att.repo
     )
   }
 

@@ -22,7 +22,11 @@ case class Document(var id: Option[BSONObjectID], var name: Option[String], var 
 
 object Document extends Entity[Document] {
 
+
+
   import models.entities.EntityRW._
+
+  override type TT = Document
 
   override val collection: BSONCollection = MongoConnection.db.collection("documents")
 
