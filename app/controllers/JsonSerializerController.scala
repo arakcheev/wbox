@@ -84,7 +84,7 @@ trait JsonSerializerController extends Controller with Writers {
    * @tparam T
    * @return
    */
-  def !>>[T](obj: Future[Option[T]])(implicit request: Request[AnyContent], format: Writes[T]) = {
+  def !>>[T,A](obj: Future[Option[T]])(implicit request: Request[A], format: Writes[T]) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val method = request.uri
     obj map { o =>

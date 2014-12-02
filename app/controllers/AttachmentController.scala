@@ -49,4 +49,11 @@ object AttachmentController extends JsonSerializerController with Secured {
    * @return
    */
   def del(uuid: String) = Auth.async() { implicit user => implicit request => !>>(att del uuid)}
+
+  /**
+   * Put file and return JSON with url
+   * @return
+   */
+  def put = Auth.async(parse.multipartFormData) { implicit user => implicit request => !>>(att put request.body.file("file"))}
+
 }

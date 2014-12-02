@@ -1,8 +1,14 @@
 package models.entities
 
+import java.io.File
+
 import models.SecureGen
 import models.db.MongoConnection
+import models.services.aws.S3
 import org.joda.time.DateTime
+import play.api.libs.Files
+import play.api.mvc.MultipartFormData
+import play.api.mvc.MultipartFormData.FilePart
 import play.api.{Play, Logger}
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
@@ -27,6 +33,8 @@ object Attachment extends Entity[Attachment] {
   type TT = Attachment
 
   override val collection: BSONCollection = MongoConnection.db.collection("attachment")
+
+  val FOLDER = "wbox/files"
 
   /**
    * Insert new Attachment
@@ -179,6 +187,24 @@ object Attachment extends Entity[Attachment] {
       case None =>
         Future.successful(None)
     }
+  }
+
+  /**
+   * Put file to S3 and return public URL
+   * @param file
+   */
+  def put(file: Option[MultipartFormData.FilePart[Files.TemporaryFile]]): Future[Option[String]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    file match {
+      case Some(FilePart(key, filename, contentType, ref)) =>
+        Logger.logger.debug(s"$key")
+        S3.put(ref.file, filename, FOLDER).map { case (uuid, result) =>
+          Some(uuid)
+        }
+      case None => Future.successful(None)
+    }
+
+
   }
 
 }

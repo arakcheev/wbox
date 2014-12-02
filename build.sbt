@@ -15,5 +15,6 @@ libraryDependencies ++= Seq(
   anorm,
   cache,
   ws,
-  "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23"
+  "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
+  "com.amazonaws" % "aws-java-sdk" % "1.9.4"
 )
