@@ -37,11 +37,14 @@ object Query extends JsonSerializerController {
         >>!(Q.MaskAPI list repo)
       case "document.list" =>
         >>!(Q.DocumentAPI list request.queryString.get("mask").flatMap(_.headOption))
-      case "document.likeField" => //todo
-        val fieldName = request.queryString.get("field").flatMap(_.headOption)
-        val fieldValue = request.queryString.get("value").flatMap(_.headOption)
+      case "document.likeField" =>
+        val name = request.queryString.get("name").flatMap(_.headOption)
+        val value = request.queryString.get("value").flatMap(_.headOption)
         val mask = request.queryString.get("mask").flatMap(_.headOption)
-        Future.successful(BadRequest(""))
+        >>!(Q.DocumentAPI likeField(mask, name, value))
+      case "document.byId" =>
+        val id = request.queryString.get("id").flatMap(_.headOption)
+        >>!(Q.DocumentAPI byId id)
     }
   }
 

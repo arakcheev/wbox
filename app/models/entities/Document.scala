@@ -98,7 +98,7 @@ trait DocumentDB extends Entity[Document] {
    * @param bsonId
    * @return
    */
-  def byId(bsonId: BSONObjectID) = {
+  private[entities] def byId(bsonId: BSONObjectID) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("_id" -> bsonId)).one[Document]
   }

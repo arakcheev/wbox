@@ -9,8 +9,8 @@ $(function(){
     data: JSON.stringify({
         name: "doc",
         params: {
-          "footer": "idh foo",
-          "header": "idh header"
+          "footer": "idh foo 2",
+          "header": "idh header 2"
         },
        tags: ["1","2","3","4"]
     }),
