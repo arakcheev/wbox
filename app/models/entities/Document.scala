@@ -10,25 +10,41 @@ import reactivemongo.bson._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-/**
- * Created by artem on 23.11.14.
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-case class Document(var id: Option[BSONObjectID], var name: Option[String], var mask: Option[BSONObjectID],
+
+case class Document(var id: Option[BSONObjectID], var name: Option[String], var mask: Option[String],
                     var params: Map[String, String], var date: Long, var status: Int,
                     var publishDate: Option[Long], var unpublishDate: Option[Long], var release: Option[BSONObjectID],
                     var user: Option[BSONObjectID], var revision: Option[Int], var uuid: Option[String], var tags: Option[List[String]]) {
 
 }
 
-object Document extends Entity[Document] {
+object Document extends DocumentDB
 
+trait DocumentDB extends Entity[Document] {
 
 
   import models.entities.EntityRW._
 
   override type TT = Document
 
-  override val collection: BSONCollection = MongoConnection.db.collection("documents")
+  val COLLECTION_NAME = "documents"
+
+  override val collection: BSONCollection = MongoConnection.db.collection(COLLECTION_NAME)
 
   /**
    * Generate empty Document
@@ -40,29 +56,22 @@ object Document extends Entity[Document] {
 
   /**
    * Generate Document by set of parameters and save it
-   * @param maskId
+   * @param maskUUID
    * @param name
    * @param params
    * @return
    */
-  def gen(maskId: String, name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
+  def gen(maskUUID: String, name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
           upd: Option[Long])(implicit user: User) = {
     val doc = empty()
-    BSONObjectID.parse(maskId).map { id =>
-      doc.mask = Some(id)
-      doc.name = Some(name)
-      doc.params = params
-      doc.user = user.id
-      doc.tags = Some(tags)
-      doc.publishDate = pd
-      doc.unpublishDate = upd
-      doc
-    } match {
-      case Success(r) =>
-        insert(r)
-      case Failure(e) =>
-        Future.failed(e)
-    }
+    doc.mask = Some(maskUUID)
+    doc.name = Some(name)
+    doc.params = params
+    doc.user = user.id
+    doc.tags = Some(tags)
+    doc.publishDate = pd
+    doc.unpublishDate = upd
+    insert(doc)
   }
 
   /**
@@ -95,13 +104,13 @@ object Document extends Entity[Document] {
   }
 
   /**
-   * List all document by mask id
-   * @param maskId
+   * List all document by mask uuid
+   * @param maskUUID
    * @return
    */
-  def list(maskId: String) = {
+  def list(maskUUID: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("mask" -> BSONObjectID(maskId))).cursor[Document].collect[List]()
+    collection.find(BSONDocument("mask" -> maskUUID)).cursor[Document].collect[List]()
   }
 
   /**
@@ -191,7 +200,7 @@ object Document extends Entity[Document] {
             }
           }
         } else {
-          doc.status = -1
+          doc.status = DELETED
           update(doc, genNew = false, multi = true, deleted = true)
         }
       case None =>

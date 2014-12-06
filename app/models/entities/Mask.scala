@@ -195,6 +195,7 @@ object Mask extends Entity[Mask] {
    * @param id
    * @return
    */
+  @deprecated
   def byId(id: String): Future[Option[Mask]] = {
     BSONObjectID.parse(id) match {
       case Success(bsonId) =>
@@ -209,7 +210,7 @@ object Mask extends Entity[Mask] {
    * @param repo must be uuid of repository
    * @return
    */
-  //todo move ObjectId tp uuid
+  //todo move ObjectId to uuid
   def list(repo: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("repo" -> BSONObjectID.parse(repo).get)).cursor[Mask].collect[List]()

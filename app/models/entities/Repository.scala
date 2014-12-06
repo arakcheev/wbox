@@ -1,11 +1,11 @@
 package models.entities
 
 import models.SecureGen
-import models.db.{MongoDB, MongoConnection}
+import models.db.MongoConnection
 import org.joda.time.DateTime
 import play.api.{Logger, Play}
 import reactivemongo.api.collections.default.BSONCollection
-import reactivemongo.bson.{BSONInteger, BSONDocumentWriter, BSONDocument, BSONObjectID}
+import reactivemongo.bson.{BSONDocument, BSONObjectID}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -33,7 +33,7 @@ case class Repository(var id: Option[BSONObjectID], var name: Option[String], va
 
 object Repository extends Entity[Repository] {
 
-  import EntityRW._
+  import models.entities.EntityRW._
 
   override type TT = Repository
 
@@ -169,7 +169,7 @@ object Repository extends Entity[Repository] {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(repo) =>
-        import Play.current
+        import play.api.Play.current
         if (Play.isTest) {
           collection.remove(BSONDocument("_id" -> repo.id)).map { le =>
             if (le.inError) {

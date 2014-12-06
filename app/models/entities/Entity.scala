@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by artem on 23.11.14.
  */
-trait Entity[E] extends MongoDB {
+trait Entity[E] extends MongoDB with Statuses {
   self =>
 
   type TT
@@ -38,6 +38,14 @@ trait Entity[E] extends MongoDB {
  */
 trait Mapper[T] extends BSONDocumentWriter[T] with MapRW {
 
+}
+
+trait Statuses {
+
+  /**
+   * Deleted status
+   */
+  val DELETED = -1
 }
 
 trait MapRW {
@@ -132,7 +140,7 @@ object EntityRW extends MapRW {
       Document(
         doc.getAs[BSONObjectID]("_id"),
         doc.getAs[String]("name"),
-        doc.getAs[BSONObjectID]("mask"),
+        doc.getAs[String]("mask"),
         doc.getAs[BSONDocument]("params").map(docs =>
           docs.elements.map { tuple =>
             tuple._1 -> tuple._2.seeAsTry[String].get

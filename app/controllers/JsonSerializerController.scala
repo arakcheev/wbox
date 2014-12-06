@@ -47,7 +47,7 @@ trait JsonSerializerController extends Controller with Writers {
    * @param request
    * @tparam T
    */
-  def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T]) = {
+  def !>>[T, A](reads: Reads[Future[Option[T]]])(implicit request: Request[AnyContent], format: Writes[T]): Future[Result] = {
     implicit val method = request.uri //todo method from request. It may be such implementation
     import scala.concurrent.ExecutionContext.Implicits.global
     request.body.asJson.getOrElse(Json.obj()).validate(reads) match {
@@ -68,11 +68,20 @@ trait JsonSerializerController extends Controller with Writers {
    * @tparam T
    * @return
    */
-  def >>![T](obj: Future[Traversable[T]])(implicit request: Request[AnyContent], format: Writes[T]) = {
+  def >>![T](obj: Future[Traversable[T]])(implicit request: Request[AnyContent], format: Writes[T], isApi: Boolean = false): Future[Result] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val method = request.uri
-    obj map { o =>
-      ok(Json toJson o)
+    if (isApi) {
+      val origin = request.headers.get(ORIGIN).getOrElse("*")
+      obj map { o =>
+        val response = ok(Json toJson o).withHeaders((ACCESS_CONTROL_ALLOW_ORIGIN, origin))
+        val l = response.body.map(b => b.length) //todo calculate content length of response and write it to DB
+        response
+      }
+    } else {
+      obj map { o =>
+        ok(Json toJson o)
+      }
     }
   }
 
@@ -84,11 +93,20 @@ trait JsonSerializerController extends Controller with Writers {
    * @tparam T
    * @return
    */
-  def !>>[T,A](obj: Future[Option[T]])(implicit request: Request[A], format: Writes[T]) = {
+  def !>>[T, A](obj: Future[Option[T]])(implicit request: Request[A], format: Writes[T], isApi: Boolean = false) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val method = request.uri
-    obj map { o =>
-      ok(Json toJson o)
+    if (isApi) {
+      val origin = request.headers.get(ORIGIN).getOrElse("*")
+      obj map { o =>
+        val response = ok(Json toJson o).withHeaders((ACCESS_CONTROL_ALLOW_ORIGIN, origin))
+        val l = response.body.map(b => b.length) //todo calculate content length of response and write it to DB
+        response
+      }
+    } else {
+      obj map { o =>
+        ok(Json toJson o)
+      }
     }
   }
 
