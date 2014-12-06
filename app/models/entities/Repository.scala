@@ -67,9 +67,21 @@ object Repository extends Entity[Repository] {
 
   /**
    * Find repo by ObjectId<id>
+   * @param bsonId bson id of repo
+   * @return
+   */
+  def byId(bsonId: BSONObjectID) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    collection.find(BSONDocument("_id" -> bsonId)).one[Repository]
+  }
+
+
+  /**
+   * Find repo by ObjectId<id>
    * @param id
    * @return
    */
+  @deprecated("Use byId(bsonId: BSONObjectID) instead","06.12.14")
   def byId(id: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     BSONObjectID.parse(id) match {
@@ -137,9 +149,9 @@ object Repository extends Entity[Repository] {
     }
   }
 
-  def update(id: String, name: String)(implicit user: User): Future[Option[Repository]] = {
+  def update(uuid: String, name: String)(implicit user: User): Future[Option[Repository]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    byId(id).flatMap {
+    byUUID(uuid).flatMap {
       case Some(repo) =>
         repo.name = Some(name)
         update(repo)
@@ -151,11 +163,11 @@ object Repository extends Entity[Repository] {
   /**
    * Delete repository.
    * If Mode is ''Test'' then delete from DB, otherwise set status 
-   * @param id
+   * @param uuid
    */
-  def del(id: String)(implicit user: User) = {
+  def del(uuid: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    byId(id).flatMap {
+    byUUID(uuid).flatMap {
       case Some(repo) =>
         import Play.current
         if (Play.isTest) {

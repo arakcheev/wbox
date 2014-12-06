@@ -77,7 +77,6 @@ object Attachment extends Entity[Attachment] {
     collection.find(BSONDocument("uuid" -> uuid)).sort(BSONDocument("revision" -> -1)).one[TT]
   }
 
-
   /**
    * Find attachment by ObjectId<id>
    * @param bsonId
@@ -203,8 +202,6 @@ object Attachment extends Entity[Attachment] {
         }
       case None => Future.successful(None)
     }
-
-
   }
 
 }

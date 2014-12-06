@@ -40,18 +40,18 @@ object RepositoryController extends JsonSerializerController with Secured {
 
   /**
    * Delete repository by ObjectId
-   * @param id
+   * @param uuid
    * @return
    */
-  def delete(id: String) = Auth.async() { implicit user => implicit request => !>>(repo del id)}
+  def delete(uuid: String) = Auth.async() { implicit user => implicit request => !>>(repo del uuid)}
 
   /**
    * Update repository with Json params
-   * @param id
+   * @param uuid
    * @return
    */
-  def update(id: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(id, name)))
+  def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(uuid, name)))
   }
 
 
