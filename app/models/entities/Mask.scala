@@ -27,25 +27,29 @@ import scala.util.{Failure, Success}
  */
 
 case class Mask(var id: Option[BSONObjectID], var name: Option[String], var title: Option[String],
-                var params: Map[String, String], var repo: Option[BSONObjectID], var status: Int, var uuid: Option[String],
+                var params: Map[String, String], var repo: Option[String], var status: Int, var uuid: Option[String],
                 var revision: Option[Int], var user: Option[BSONObjectID], var date: Option[Long]) {
 
 }
 
-object Mask extends Entity[Mask] {
+object Mask extends MaskDB
+
+trait MaskDB extends Entity[Mask] {
 
   import models.entities.EntityRW._
 
   override type TT = Mask
 
-  override val collection: BSONCollection = MongoConnection.db.collection("mask")
+  val COLLECTION_NAME = "mask"
+
+  override val collection: BSONCollection = MongoConnection.db.collection(COLLECTION_NAME)
 
   /**
    * Generate empty Mask
    * @return
    */
   def empty() = {
-    Mask(Some(BSONObjectID.generate), name = None, title = None, params = Map.empty, repo = None, status = 1,
+    Mask(Some(BSONObjectID.generate), name = None, title = None, params = Map.empty, repo = None, status = NEW,
       uuid = Some(SecureGen.nextSessionId()), revision = None, user = None, date = Some(DateTime.now().getMillis))
   }
 
@@ -65,19 +69,12 @@ object Mask extends Entity[Mask] {
    */
   def gen(name: String, repo: String, title: String, params: Map[String, String])(implicit user: User) = {
     val mask = empty()
-    BSONObjectID.parse(repo).map { repoId =>
-      mask.repo = Some(repoId)
-      mask.name = Some(name)
-      mask.title = Some(title)
-      mask.params = params
-      mask.user = user.id
-      mask
-    } match {
-      case Success(m) =>
-        insert(m)
-      case Failure(e) =>
-        Future.failed(e)
-    }
+    mask.repo = Some(repo)
+    mask.name = Some(name)
+    mask.title = Some(title)
+    mask.params = params
+    mask.user = user.id
+    insert(mask)
   }
 
   /**
@@ -210,10 +207,9 @@ object Mask extends Entity[Mask] {
    * @param repo must be uuid of repository
    * @return
    */
-  //todo move ObjectId to uuid
   def list(repo: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("repo" -> BSONObjectID.parse(repo).get)).cursor[Mask].collect[List]()
+    collection.find(BSONDocument("repo" -> repo)).cursor[Mask].collect[List]()
   }
 
   /**
@@ -236,7 +232,7 @@ object Mask extends Entity[Mask] {
             }
           }
         } else {
-          mask.status = -1
+          mask.status = DELETED
           update(mask, genNew = false, multi = true, deleted = true)
         }
       case None =>

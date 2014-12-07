@@ -1,7 +1,7 @@
 package models
 
 import models.db.MongoConnection
-import models.entities.{DocumentDB, Document, Mask}
+import models.entities.{MaskDB, DocumentDB, Document, Mask}
 import org.joda.time.DateTime
 import play.api.Logger
 import reactivemongo.api.QueryOpts
@@ -30,16 +30,53 @@ import scala.concurrent.Future
 //todo: Only entities with max revision and valid date between must output thought API
 object QueryAPI {
 
-  object MaskAPI {
-
-    def list(repo: String)(implicit offset: Int, limit: Option[Int]) = {
-      Mask.list(repo)
-    }
-
-  }
+  object MaskAPI extends MaskQueryAPI
 
 
   object DocumentAPI extends DocumentQueryAPI
+
+}
+
+trait MaskQueryAPI extends MaskDB {
+
+  import models.entities.EntityRW._
+
+  val PROJECTION = BSONDocument("_id" -> 0, "user" -> 0, "revision" -> 0, "status" -> 0,"repo" ->0)
+
+  final private def query(mather: BSONDocument)(implicit offset: Int, limit: Option[Int]): Future[List[Mask]] = {
+    MongoConnection.db.command(
+      Aggregate(
+        COLLECTION_NAME, Seq(
+          Match(
+            mather ++ BSONDocument(
+              "status" -> BSONDocument("$gt" -> DELETED)
+            )
+          ), Group(
+            BSONString("$uuid")
+          )(
+              "maxRevision" -> Max("revision")
+            )
+        )
+      )
+    ).flatMap { docs =>
+      val array = docs.foldLeft(Seq.empty[BSONDocument]) {
+        //todo why $or but not $and
+        case (xs, bson) => xs :+ BSONDocument(
+          "uuid" -> bson.getAs[String]("_id"),
+          "revision" -> bson.getAs[Int]("maxRevision")
+        )
+      }
+      collection.find(BSONDocument(
+        "$or" -> {
+          if (array.isEmpty) Seq(BSONDocument.empty) else array
+        }
+      ), PROJECTION).options(QueryOpts(offset, limit.getOrElse(10))).cursor[Mask].collect[List](limit.getOrElse(10))
+    }
+  }
+
+  def list(repo: String)(implicit offset: Int, limit: Option[Int]) = {
+    query(BSONDocument("repo" -> repo))
+  }
 
 }
 

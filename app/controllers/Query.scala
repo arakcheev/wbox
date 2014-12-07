@@ -45,6 +45,8 @@ object Query extends JsonSerializerController {
       case "document.byId" =>
         val id = request.queryString.get("id").flatMap(_.headOption)
         >>!(Q.DocumentAPI byId id)
+      case _ =>
+        futureBad("Method not found")
     }
   }
 

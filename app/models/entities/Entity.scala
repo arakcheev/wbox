@@ -46,6 +46,11 @@ trait Statuses {
    * Deleted status
    */
   val DELETED = -1
+
+  /**
+   * Status of new entity
+   */
+  val NEW = 1
 }
 
 trait MapRW {
@@ -190,7 +195,7 @@ object EntityRW extends MapRW {
               tuple._1 -> tuple._2.seeAsTry[String].get
           }.toMap
         ).getOrElse(Map.empty),
-        doc.getAs[BSONObjectID]("repo"),
+        doc.getAs[String]("repo"),
         doc.getAs[Int]("status").getOrElse(0),
         doc.getAs[String]("uuid"),
         doc.getAs[Int]("revision"),
