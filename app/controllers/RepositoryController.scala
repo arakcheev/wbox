@@ -4,6 +4,7 @@ import models.entities.{Repository => repo}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
+import play.api.mvc.AnyContent
 
 import scala.language.higherKinds
 
@@ -22,7 +23,6 @@ import scala.language.higherKinds
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//TODO: permission to creation repo
 object RepositoryController extends JsonSerializerController with Secured {
 
   /**
@@ -39,19 +39,27 @@ object RepositoryController extends JsonSerializerController with Secured {
   def newRepo(name: String) = Auth.async() { implicit user => implicit request => !>>(repo gen name)}
 
   /**
-   * Delete repository by ObjectId
-   * @param uuid
+   * Delete repository by uuid
    * @return
    */
-  def delete(uuid: String) = Auth.async() { implicit user => implicit request => !>>(repo del uuid)}
+  def delete = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit request => !>>(repo.del(a._2.uuid)(a._1))}
+
+  // Auth.async() { implicit user => implicit request => !>>(repo del uuid)}
 
   /**
    * Update repository with Json params
-   * @param uuid
    * @return
    */
-  def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(uuid, name)))
+  def update = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo.update(a._2.uuid, name)(a._1)))
+  }
+
+  /**
+   * Add access to repository( e.g. invite to repository)
+   * @return
+   */
+  def invite = Accessible[AnyContent](CREATOR)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "to").read[String] ~
+    (__ \ "rule").read[Int](verifying[Int](rule => rule > CREATOR)))((to: String, rule: Int) => repo.addAccess(a._2.uuid, rule, to)(a._1)))
   }
 
 

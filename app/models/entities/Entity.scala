@@ -6,9 +6,22 @@ import reactivemongo.bson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
- * Created by artem on 23.11.14.
+/*
+ * Copyright 2014(23.11.14) Arakcheev Artem (artem.arakcheev@phystech.edu)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 trait Entity[E] extends MongoDB with Statuses {
   self =>
 
@@ -65,6 +78,7 @@ trait MapRW {
       }
     }
 
+  //todo: write method
   implicit def MapReader[V](implicit vr: BSONDocumentReader[V]): BSONDocumentReader[Map[String, V]] = new BSONDocumentReader[Map[String, V]] {
     def read(bson: BSONDocument): Map[String, V] = {
       val elements = bson.elements.map { tuple =>
@@ -84,10 +98,16 @@ object EntityRW extends MapRW {
         doc.getAs[BSONObjectID]("_id"),
         doc.getAs[String]("name"),
         doc.getAs[Int]("status").getOrElse(0),
-        doc.getAs[BSONObjectID]("user"),
+        doc.getAs[String]("user"),
         doc.getAs[String]("uuid"),
         doc.getAs[Int]("revision"),
-        doc.getAs[BSONDateTime]("date").map(_.value)
+        doc.getAs[BSONDateTime]("date").map(_.value),
+        doc.getAs[BSONDocument]("users").map(docs =>
+          docs.elements.map {
+            tuple =>
+              tuple._1 -> tuple._2.seeAsTry[Int].get
+          }.toMap
+        )
       )
     }
   }
@@ -100,7 +120,8 @@ object EntityRW extends MapRW {
       "user" -> doc.user,
       "uuid" -> doc.uuid,
       "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
-      "date" -> doc.date.map(BSONDateTime)
+      "date" -> doc.date.map(BSONDateTime),
+      "users" -> doc.users
     )
   }
 

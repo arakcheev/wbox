@@ -19,14 +19,14 @@ import play.api.mvc.{Request, AnyContent, Headers, Action}
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+//todo: enumerate it!!!!
 object Query extends JsonSerializerController {
 
   def query(v: Double, repo: String, method: String) = Action.async { r =>
 
     /** Copy request and set X-Repository Header */
     implicit val request: Request[AnyContent] = Request(r.copy(headers = new Headers() {
-      override protected val data: Seq[(String, Seq[String])] = r.headers.toMap.toSeq ++ Seq(X_REPOSITORY -> Seq(repo))
+      override protected val data: Seq[(String, Seq[String])] = r.headers.toMap.toSeq ++ Seq(AccessHeaders.X_REPOSITORY -> Seq(repo))
     }), r.body)
 
     implicit val isApi = true

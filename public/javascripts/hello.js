@@ -1,23 +1,22 @@
 if (window.console) {
-  console.log("Welcome to your Play application's JavaScript!");
+    console.log("Welcome to your Play application's JavaScript!");
 }
 
-$(function(){
-  $.ajax({
-    type: "POST",
-    url: "/documents/update?uuid=idh6c3vjp39dnr9190f1ufkg96",
-    data: JSON.stringify({
-        name: "doc",
-        params: {
-          "footer": "idh foo 2",
-          "header": "idh header 2"
-        },
-       tags: ["1","2","3","4"]
-    }),
-    contentType: "application/json"
-  })
-      .done(function( msg ) {
-        console.log( "Data Saved: " + msg );
-      });
+$(function () {
+    $.ajax({
+        type: "POST"
+        , url: "/repositories/invite"
+        , beforeSend: function (xhr) {
+            xhr.setRequestHeader('X-Repository', 'hq539ov8fl0b0jo7can9hmb7ev');
+        }
+        , data: JSON.stringify({
+            to: "54664063920000f600b2c23e"
+            ,rule: 2
+        })
+        , contentType: "application/json"
+    })
+        .done(function (msg) {
+            console.log("Data Saved: " + msg);
+        });
 
 });

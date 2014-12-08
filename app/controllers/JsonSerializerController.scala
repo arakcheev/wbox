@@ -30,9 +30,6 @@ trait JsonSerializerController extends Controller with Writers {
   import play.api.Play.current
   import play.api.http.ContentTypes
 
-  val X_REPOSITORY = "X-Repository"
-
-
   def recover: PartialFunction[Throwable, Result] = {
     case e: Exception =>
       if (play.api.Play.isDev) {

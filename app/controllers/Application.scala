@@ -28,4 +28,9 @@ object Application extends JsonSerializerController with Secured {
     }
   }
 
+  def login2() = Action.async { implicit request =>
+    User.byId("54861e4e1a98fd47a3fc6065").map(_.get).map { implicit user =>
+      Ok("").withCookies(Cookie(User.COOKIE_EMAIL, user.uuid.get, Some(86400)), Cookie(User.COOKIE_AUTH, user.uuid.get))
+    }
+  }
 }

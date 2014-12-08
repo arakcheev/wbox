@@ -1,5 +1,6 @@
 package models.entities
 
+import controllers.AccessRule
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
@@ -26,8 +27,23 @@ import scala.util.{Failure, Success}
  * limitations under the License.
  */
 
-case class Repository(var id: Option[BSONObjectID], var name: Option[String], var status: Int, var user: Option[BSONObjectID],
-                      var uuid: Option[String], var revision: Option[Int], var date: Option[Long]) {
+/**
+ *
+ * @param id
+ * @param name
+ * @param status
+ * @param user - owner of latest update of repository
+ * @param uuid
+ * @param revision
+ * @param date
+ */
+case class Repository(var id: Option[BSONObjectID], var name: Option[String], var status: Int, var user: Option[String],
+                      var uuid: Option[String], var revision: Option[Int], var date: Option[Long], var users: Option[Map[String, Int]]) {
+
+  /** Get rule for user */
+  def getRule(user: Option[String]) = {
+    users.flatMap(_.get(user.getOrElse(""))).getOrElse(AccessRule.NONE)
+  }
 
 }
 
@@ -41,7 +57,7 @@ object Repository extends Entity[Repository] {
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
   def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None,
-    Some(DateTime.now().getMillis))
+    Some(DateTime.now().getMillis), users = None)
 
   /**
    * Generate new repo by name and save it.
@@ -51,8 +67,9 @@ object Repository extends Entity[Repository] {
    */
   def gen(name: String)(implicit user: User) = {
     val repo = empty()
-    repo.user = user.id
+    repo.user = user.uuid
     repo.name = Some(name)
+    repo.users = user.uuid.map(id => Map(id -> AccessRule.CREATOR))
     insert(repo)
   }
 
@@ -81,7 +98,7 @@ object Repository extends Entity[Repository] {
    * @param id
    * @return
    */
-  @deprecated("Use byId(bsonId: BSONObjectID) instead","06.12.14")
+  @deprecated("Use byId(bsonId: BSONObjectID) instead", "06.12.14")
   def byId(id: String) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     BSONObjectID.parse(id) match {
@@ -103,13 +120,43 @@ object Repository extends Entity[Repository] {
   }
 
   /**
+   * Find repo with uuid and max revision
+   * @param uuid
+   * @return
+   */
+  //fixme: Option with None return all results
+  def byUUID(uuid: Option[String]) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    collection.find(BSONDocument("uuid" -> uuid.getOrElse("-1"))).sort(BSONDocument("revision" -> -1)).one[Repository]
+  }
+
+  /**
    * List of all user repositories
    * @param user
    * @return
    */
+  //FIXME: Fix max revision access OR delegate to front-end
   def list(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("user" -> user.id)).cursor[Repository].collect[List]()
+    collection.find(BSONDocument(
+      "$or" -> List(
+        BSONDocument(
+          "user" -> user.uuid.getOrElse("-1")
+        ),
+        BSONDocument(
+          "users." + user.uuid.getOrElse("-1") -> BSONDocument("$exists" -> true)
+        )
+      )
+    )).cursor[Repository].collect[List]().map { xs =>
+      xs.groupBy(r => r.uuid.getOrElse("-1")).map { case (uuid, ys) =>
+        val repo = ys.sortBy(r => -r.revision.getOrElse(1)).head
+        if (repo.getRule(user.uuid) <= AccessRule.READ) {
+          Some(repo)
+        } else {
+          None
+        }
+      }.toList.filter(r => r.isDefined)
+    }
   }
 
   /**
@@ -120,9 +167,9 @@ object Repository extends Entity[Repository] {
    * @return
    */
   //todo: Revision on deletion multi docs
-  def update(repo: Repository, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Repository]] = {
+  private def update(repo: Repository, genNew: Boolean = true, multi: Boolean = false)(implicit user: User): Future[Option[Repository]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    repo.user = user.id
+    repo.user = user.uuid
     repo.revision = repo.revision.map(_ + 1)
     repo.date = Some(DateTime.now().getMillis)
     if (genNew) {
@@ -149,7 +196,7 @@ object Repository extends Entity[Repository] {
     }
   }
 
-  def update(uuid: String, name: String)(implicit user: User): Future[Option[Repository]] = {
+  def update(uuid: Option[String], name: String)(implicit user: User): Future[Option[Repository]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(repo) =>
@@ -165,7 +212,7 @@ object Repository extends Entity[Repository] {
    * If Mode is ''Test'' then delete from DB, otherwise set status 
    * @param uuid
    */
-  def del(uuid: String)(implicit user: User) = {
+  def del(uuid: Option[String])(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(repo) =>
@@ -180,9 +227,28 @@ object Repository extends Entity[Repository] {
             }
           }
         } else {
-          repo.status = -1
+          repo.status = DELETED
           update(repo, genNew = false, multi = true)
         }
+      case None =>
+        Future.successful(None)
+    }
+  }
+
+  /**
+   * Add access to repository
+   * @param uuid id of repo
+   * @param rule rule to add
+   * @param to uuid of user
+   * @param user
+   * @return
+   */
+  def addAccess(uuid: Option[String], rule: Int, to: String)(implicit user: User) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    byUUID(uuid).flatMap {
+      case Some(repo) =>
+        repo.users = repo.users.map(xs => xs ++ Map(to -> rule))
+        update(repo)
       case None =>
         Future.successful(None)
     }

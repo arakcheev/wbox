@@ -16,13 +16,13 @@
 
 package models.entities
 
-import controllers.Query
+import controllers.AccessHeaders
 import models.db.MongoConnection
 import org.joda.time.DateTime
 import play.api.libs.iteratee.Iteratee
 import play.api.mvc.{Request, Result}
 import reactivemongo.api.collections.default.BSONCollection
-import reactivemongo.bson.{BSONDateTime, BSONDocument}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONLong}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -56,8 +56,9 @@ trait TrafficDB extends Entity[Traffic] {
     response.body.run(Iteratee.foreach[Array[Byte]] { body =>
       collection.insert(BSONDocument(
         "ts" -> BSONDateTime(DateTime.now().getMillis),
-        "repo" -> request.headers.get(Query.X_REPOSITORY),
-        "request" -> body.length
+        "repo" -> request.headers.get(AccessHeaders.X_REPOSITORY),
+        "request" -> body.length,
+        "rid" -> BSONLong(request.id)
       ))
     })
   }
