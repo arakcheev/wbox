@@ -1,12 +1,12 @@
 package models
 
 import models.db.MongoConnection
-import models.entities.{MaskDB, DocumentDB, Document, Mask}
+import models.entities.{Document, DocumentDB, Mask, MaskDB}
 import org.joda.time.DateTime
-import play.api.Logger
 import reactivemongo.api.QueryOpts
 import reactivemongo.bson._
 import reactivemongo.core.commands._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -27,7 +27,7 @@ import scala.concurrent.Future
  */
 
 //todo:
-//todo: Only entities with max revision and valid date between must output thought API
+//todo why 'or' but not 'and' in query
 object QueryAPI {
 
   object MaskAPI extends MaskQueryAPI
@@ -60,7 +60,6 @@ trait MaskQueryAPI extends MaskDB {
       )
     ).flatMap { docs =>
       val array = docs.foldLeft(Seq.empty[BSONDocument]) {
-        //todo why $or but not $and
         case (xs, bson) => xs :+ BSONDocument(
           "uuid" -> bson.getAs[String]("_id"),
           "revision" -> bson.getAs[Int]("maxRevision")
@@ -146,7 +145,6 @@ trait DocumentQueryAPI extends DocumentDB {
       )
     ).flatMap { docs =>
       val array = docs.foldLeft(Seq.empty[BSONDocument]) {
-        //todo why $or but not $and
         case (xs, bson) => xs :+ BSONDocument(
           "uuid" -> bson.getAs[String]("_id"),
           "revision" -> bson.getAs[Int]("maxRevision")

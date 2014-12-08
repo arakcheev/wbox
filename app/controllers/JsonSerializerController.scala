@@ -2,10 +2,10 @@ package controllers
 
 import models.entities._
 import play.api.libs.json._
-import play.api.mvc.{AnyContent, Request, Result, Controller}
+import play.api.mvc.{AnyContent, Controller, Request, Result}
 import reactivemongo.bson.BSONObjectID
 
-import scala.collection.{Traversable, GenTraversable}
+import scala.collection.Traversable
 import scala.concurrent.Future
 import scala.language.higherKinds
 
@@ -29,6 +29,8 @@ trait JsonSerializerController extends Controller with Writers {
 
   import play.api.Play.current
   import play.api.http.ContentTypes
+
+  val X_REPOSITORY = "X-Repository"
 
 
   def recover: PartialFunction[Throwable, Result] = {
@@ -72,10 +74,11 @@ trait JsonSerializerController extends Controller with Writers {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val method = request.uri
     if (isApi) {
+      //todo: duplicate code [[!>>]]
       val origin = request.headers.get(ORIGIN).getOrElse("*")
       obj map { o =>
         val response = ok(Json toJson o).withHeaders((ACCESS_CONTROL_ALLOW_ORIGIN, origin))
-        val l = response.body.map(b => b.length) //todo calculate content length of response and write it to DB
+        Traffic.write(request, response)
         response
       }
     } else {
@@ -86,7 +89,7 @@ trait JsonSerializerController extends Controller with Writers {
   }
 
   /**
-   * Wrap all actions with Option[T]  model result
+   * Wrap all actions with Option[T] model result
    * @param obj
    * @param request
    * @param format
@@ -97,10 +100,11 @@ trait JsonSerializerController extends Controller with Writers {
     import scala.concurrent.ExecutionContext.Implicits.global
     implicit val method = request.uri
     if (isApi) {
+      //todo: duplicate code [[>>!]]
       val origin = request.headers.get(ORIGIN).getOrElse("*")
       obj map { o =>
         val response = ok(Json toJson o).withHeaders((ACCESS_CONTROL_ALLOW_ORIGIN, origin))
-        val l = response.body.map(b => b.length) //todo calculate content length of response and write it to DB
+        Traffic.write(request, response)
         response
       }
     } else {

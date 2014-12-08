@@ -1,11 +1,7 @@
 package controllers
 
 import models.{QueryAPI => Q}
-import models.entities.{Document, Mask}
-import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller}
-
-import scala.concurrent.Future
+import play.api.mvc.{Request, AnyContent, Headers, Action}
 
 
 /*
@@ -26,9 +22,15 @@ import scala.concurrent.Future
 
 object Query extends JsonSerializerController {
 
-  def query(v: Double, repo: String, method: String) = Action.async { implicit request =>
+  def query(v: Double, repo: String, method: String) = Action.async { r =>
+
+    /** Copy request and set X-Repository Header */
+    implicit val request: Request[AnyContent] = Request(r.copy(headers = new Headers() {
+      override protected val data: Seq[(String, Seq[String])] = r.headers.toMap.toSeq ++ Seq(X_REPOSITORY -> Seq(repo))
+    }), r.body)
+
     implicit val isApi = true
-    //todo number format exception
+    //fixme: number format exception
     implicit val offset = request.queryString.get("offset").flatMap(_.headOption).map(_.toInt).getOrElse(0)
     implicit val limit = request.queryString.get("limit").flatMap(_.headOption).map(_.toInt)
 
