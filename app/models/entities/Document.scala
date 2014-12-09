@@ -108,7 +108,7 @@ trait DocumentDB extends Entity[Document] {
    * @param maskUUID
    * @return
    */
-  def list(maskUUID: String) = {
+  def list(maskUUID: String)(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("mask" -> maskUUID)).cursor[Document].collect[List]()
   }

@@ -42,7 +42,7 @@ object RepositoryController extends JsonSerializerController with Secured {
    * Delete repository by uuid
    * @return
    */
-  def delete = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit request => !>>(repo.del(a._2.uuid)(a._1))}
+  def delete = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(repo del repository.uuid)}
 
   // Auth.async() { implicit user => implicit request => !>>(repo del uuid)}
 
@@ -50,16 +50,16 @@ object RepositoryController extends JsonSerializerController with Secured {
    * Update repository with Json params
    * @return
    */
-  def update = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo.update(a._2.uuid, name)(a._1)))
+  def update = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(repository.uuid, name)))
   }
 
   /**
    * Add access to repository( e.g. invite to repository)
    * @return
    */
-  def invite = Accessible[AnyContent](CREATOR)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "to").read[String] ~
-    (__ \ "rule").read[Int](verifying[Int](rule => rule > CREATOR)))((to: String, rule: Int) => repo.addAccess(a._2.uuid, rule, to)(a._1)))
+  def invite = Accessible[AnyContent](CREATOR)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "to").read[String] ~
+    (__ \ "rule").read[Int](verifying[Int](rule => rule > CREATOR)))((to: String, rule: Int) => repo.addAccess(repository.uuid, rule, to)))
   }
 
 }

@@ -106,13 +106,13 @@ trait AccessBuilder {
   self: JsonSerializerController with Secured =>
 
   def access[A](rule: Int)(p: BodyParser[A])(
-    f: ((User, Repository)) => Request[A] => Future[Result]) = {
+    f: User => Repository => Request[A] => Future[Result]) = {
     Action.async(p) { request =>
       Repository.byUUID(request.headers.get(X_REPOSITORY)).flatMap { r =>
         User.fromRequest(request).flatMap { u =>
           u.zip(r).headOption match {
             case Some((user, repo)) if repo.getRule(user.uuid) <= rule =>
-              f((user, repo))(request)
+              f(user)(repo)(request)
             case Some((user, repo)) =>
               futureBad("Invalid access")
             case None =>

@@ -22,30 +22,29 @@ import play.api.libs.json._
  */
 
 //TODO: field type (number,email,text,id,????)
-//TODO: permission to creation mask
 object MaskController extends JsonSerializerController with Secured {
 
   /**
    * Create new Mask
    * @return
    */
-  def gen = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.gen(name, a._2.uuid, title, params)(a._1)))
+  def gen = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.gen(name, repository.uuid, title, params)))
   }
 
   /**
    * List of all mask in repository
    * @return
    */
-  def list = Accessible(READ)(parse.anyContent) { implicit a => implicit request => >>!(mask.list(a._2.uuid)(a._1))}
+  def list = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request => >>!(mask.list(repository.uuid))}
 
   /**
    * Update mask by ObjectId
    * @param id
    * @return
    */
-  def update(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.update(id, name, title, params)(a._1)))
+  def update(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.update(id, name, title, params)))
   }
 
   /**
@@ -53,5 +52,5 @@ object MaskController extends JsonSerializerController with Secured {
    * @param id
    * @return
    */
-  def delete(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(mask.del(id)(a._1))}
+  def delete(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(mask.del(id))}
 }

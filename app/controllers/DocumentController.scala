@@ -26,24 +26,23 @@ object DocumentController extends JsonSerializerController with Secured {
 
   /**
    * List of documents by maskId
-   * @param maskId
    * @return
    */
-  def list(maskId: String) = Auth.async(parse.anyContent) { implicit user => implicit request => >>!(doc list maskId)}
+  def list(maskUuid: String) = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request => >>!(doc.list(maskUuid))}
 
   /**
    * Get document by uuid
    * @param uuid
    * @return
    */
-  def byuuid(uuid: String) = Auth.async(parse.anyContent) { implicit user => implicit request => !>>(doc byUUID uuid)}
+  def byuuid(uuid: String) = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(doc byUUID uuid)}
 
   /**
    *
    * @param maskId
    * @return
    */
-  def gen(maskId: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+  def gen(maskId: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
     (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
                                       upd: Option[Long]) => doc gen(maskId, name, params, tags, pd, upd)))
@@ -54,7 +53,7 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param uuid
    * @return
    */
-  def update(uuid: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+  def update(uuid: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request =>  !>>(((__ \ "name").read[String] ~
     (__ \ "params").read[Map[String, String]] ~ (__ \ "tags").read[List[String]] ~ (__ \ "pd").readNullable[Long] ~
     (__ \ "upd").readNullable[Long])((name: String, params: Map[String, String], tags: List[String], pd: Option[Long],
                                       upd: Option[Long]) => doc update(uuid, name, params, tags, pd, upd)))
@@ -65,11 +64,11 @@ object DocumentController extends JsonSerializerController with Secured {
    * @param uuid
    * @return
    */
-  def delete(uuid: String) = Auth.async() { implicit user => implicit request => !>>(doc del uuid)}
+  def delete(uuid: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request =>  !>>(doc del uuid)}
 
   /**
    * Return history of changes of document
    */
-  def history(uuid: String) = Auth.async() { implicit user => implicit request => >>!(doc history uuid)}
+  def history(uuid: String) = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request =>  >>!(doc history uuid)}
 
 }
