@@ -4,6 +4,7 @@ import controllers.AccessRule
 import models.SecureGen
 import models.db.MongoConnection
 import org.joda.time.DateTime
+import play.api.libs.iteratee.Iteratee
 import play.api.{Logger, Play}
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson.{BSONDocument, BSONObjectID}

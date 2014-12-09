@@ -67,9 +67,9 @@ trait MaskDB extends Entity[Mask] {
    * @param params
    * @return
    */
-  def gen(name: String, repo: String, title: String, params: Map[String, String])(implicit user: User) = {
+  def gen(name: String, repo: Option[String], title: String, params: Map[String, String])(implicit user: User) = {
     val mask = empty()
-    mask.repo = Some(repo)
+    mask.repo = repo
     mask.name = Some(name)
     mask.title = Some(title)
     mask.params = params
@@ -154,6 +154,7 @@ trait MaskDB extends Entity[Mask] {
    * @param user
    * @return
    */
+  //fixme: Updating by uuid
   def update(bsonId: BSONObjectID, name: String, title: String, params: Map[String, String])(implicit user: User): Future[Option[Mask]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byId(bsonId).flatMap {
@@ -207,9 +208,9 @@ trait MaskDB extends Entity[Mask] {
    * @param repo must be uuid of repository
    * @return
    */
-  def list(repo: String) = {
+  def list(repo: Option[String])(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("repo" -> repo)).cursor[Mask].collect[List]()
+    collection.find(BSONDocument("repo" -> repo.getOrElse("-1"))).cursor[Mask].collect[List]()//fixme:
   }
 
   /**

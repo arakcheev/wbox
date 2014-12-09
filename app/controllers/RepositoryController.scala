@@ -4,7 +4,7 @@ import models.entities.{Repository => repo}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import play.api.mvc.AnyContent
+import play.api.mvc.{Action, AnyContent}
 
 import scala.language.higherKinds
 
@@ -61,6 +61,5 @@ object RepositoryController extends JsonSerializerController with Secured {
   def invite = Accessible[AnyContent](CREATOR)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "to").read[String] ~
     (__ \ "rule").read[Int](verifying[Int](rule => rule > CREATOR)))((to: String, rule: Int) => repo.addAccess(a._2.uuid, rule, to)(a._1)))
   }
-
 
 }

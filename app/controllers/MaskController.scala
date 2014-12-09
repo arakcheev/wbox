@@ -27,27 +27,25 @@ object MaskController extends JsonSerializerController with Secured {
 
   /**
    * Create new Mask
-   * @param repo
    * @return
    */
-  def gen(repo: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask gen(name, repo, title, params)))
+  def gen = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.gen(name, a._2.uuid, title, params)(a._1)))
   }
 
   /**
    * List of all mask in repository
-   * @param repo
    * @return
    */
-  def list(repo: String) = Auth.async() { implicit user => implicit request => >>!(mask list repo)}
+  def list = Accessible(READ)(parse.anyContent) { implicit a => implicit request => >>!(mask.list(a._2.uuid)(a._1))}
 
   /**
    * Update mask by ObjectId
    * @param id
    * @return
    */
-  def update(id: String) = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask update(id, name, title, params)))
+  def update(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "title").read[String] ~ (__ \ "params").read[Map[String, String]])((name: String, title: String, params: Map[String, String]) => mask.update(id, name, title, params)(a._1)))
   }
 
   /**
@@ -55,5 +53,5 @@ object MaskController extends JsonSerializerController with Secured {
    * @param id
    * @return
    */
-  def delete(id: String) = Auth.async() { implicit user => implicit request => !>>(mask del id)}
+  def delete(id: String) = Accessible(WRITE)(parse.anyContent) { implicit a => implicit request => !>>(mask.del(id)(a._1))}
 }

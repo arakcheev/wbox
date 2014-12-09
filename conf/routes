@@ -15,8 +15,8 @@ POST        /documents/new                  controllers.DocumentController.gen(m
 POST        /documents/update               controllers.DocumentController.update(uuid: String)
 POST        /documents/delete               controllers.DocumentController.delete(uuid: String)
 
-GET         /masks                          controllers.MaskController.list(repo: String)
-POST        /masks/new                      controllers.MaskController.gen(repo: String)
+GET         /masks                          controllers.MaskController.list
+POST        /masks/new                      controllers.MaskController.gen
 POST        /masks/update                   controllers.MaskController.update(id: String)
 POST        /masks/delete                   controllers.MaskController.delete(id: String)
 
