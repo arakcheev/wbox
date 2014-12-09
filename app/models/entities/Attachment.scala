@@ -57,11 +57,11 @@ object Attachment extends Entity[Attachment] {
    * @param name
    * @return
    */
-  def gen(name: String, url: String, entity: String, repo: String)(implicit user: User) = {
+  def gen(name: String, url: String, entity: String, repo: Option[String])(implicit user: User) = {
     val att = empty()
     att.name = Some(name)
     att.user = user.uuid
-    att.repo = Some(repo)
+    att.repo = repo
     att.url = Some(url)
     att.entity = Some(entity)
     insert(att)
