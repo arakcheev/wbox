@@ -2,6 +2,7 @@ package controllers
 
 import models.entities._
 import play.api._
+import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{Json, JsString, JsValue, Writes}
 import play.api.mvc._
 import reactivemongo.bson.BSONObjectID
@@ -19,7 +20,10 @@ object Application extends JsonSerializerController with Secured {
 
 
   def index = Auth.auth() { implicit user => implicit request =>
-    Ok(views.html.index(""))
+    Ok.chunked(
+      Enumerator("kiki", "foo", "bar").andThen(Enumerator.eof)
+    )
+
   }
 
   def login() = Action.async { implicit request =>

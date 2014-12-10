@@ -207,7 +207,7 @@ trait MaskDB extends Entity[Mask] {
    * List of masks in repository
    * @param repo must be uuid of repository
    * @return
-   */
+   *///fixme: aggragete to doc hierarchy
   def list(repo: Option[String])(implicit user: User) = {
     import scala.concurrent.ExecutionContext.Implicits.global
     collection.find(BSONDocument("repo" -> repo.getOrElse("-1"))).cursor[Mask].collect[List]()//fixme:
