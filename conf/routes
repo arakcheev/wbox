@@ -22,7 +22,7 @@ POST        /masks/delete                   controllers.MaskController.delete(id
 
 GET         /repositories                   controllers.RepositoryController.list
 POST        /repositories/delete            controllers.RepositoryController.delete
-POST        /repositories/new               controllers.RepositoryController.newRepo(name: String)
+POST        /repositories/new               controllers.RepositoryController.newRepo
 POST        /repositories/update            controllers.RepositoryController.update
 POST        /repositories/invite            controllers.RepositoryController.invite
 

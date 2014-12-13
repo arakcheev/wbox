@@ -33,10 +33,11 @@ object RepositoryController extends JsonSerializerController with Secured {
 
   /**
    * Create new repository with name ${name}
-   * @param name
    * @return
    */
-  def newRepo(name: String) = Auth.async() { implicit user => implicit request => !>>(repo gen name)}
+  def newRepo = Auth.async() { implicit user => implicit request => !>>(((__ \ "name").read[String] ~
+    (__ \ "description").readNullable[String])((name: String, description: Option[String]) => repo gen(name, description)))
+  }
 
   /**
    * Delete repository by uuid

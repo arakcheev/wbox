@@ -107,7 +107,8 @@ object EntityRW extends MapRW {
             tuple =>
               tuple._1 -> tuple._2.seeAsTry[Int].get
           }.toMap
-        )
+        ),
+        doc.getAs[String]("description")
       )
     }
   }
@@ -121,7 +122,8 @@ object EntityRW extends MapRW {
       "uuid" -> doc.uuid,
       "revision" -> BSONInteger(doc.revision.getOrElse(1)), //need to increment revision of document. This value cannot be None
       "date" -> doc.date.map(BSONDateTime),
-      "users" -> doc.users
+      "users" -> doc.users,
+      "description" -> doc.description
     )
   }
 

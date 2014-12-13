@@ -39,7 +39,8 @@ import scala.util.{Failure, Success}
  * @param date
  */
 case class Repository(var id: Option[BSONObjectID], var name: Option[String], var status: Int, var user: Option[String],
-                      var uuid: Option[String], var revision: Option[Int], var date: Option[Long], var users: Option[Map[String, Int]]) {
+                      var uuid: Option[String], var revision: Option[Int], var date: Option[Long], var users: Option[Map[String, Int]],
+                      var description: Option[String]) {
 
   /** Get rule for user */
   def getRule(user: Option[String]) = {
@@ -58,7 +59,7 @@ object Repository extends Entity[Repository] {
   override val collection: BSONCollection = MongoConnection.db.collection("repository")
 
   def empty() = Repository(Some(BSONObjectID.generate), name = None, status = 1, user = None, uuid = Some(SecureGen.nextSessionId()), revision = None,
-    Some(DateTime.now().getMillis), users = None)
+    Some(DateTime.now().getMillis), users = None, description = None)
 
   /**
    * Generate new repo by name and save it.
@@ -66,10 +67,11 @@ object Repository extends Entity[Repository] {
    * @param user
    * @return
    */
-  def gen(name: String)(implicit user: User) = {
+  def gen(name: String, description: Option[String])(implicit user: User) = {
     val repo = empty()
     repo.user = user.uuid
     repo.name = Some(name)
+    repo.description = description
     repo.users = user.uuid.map(id => Map(id -> AccessRule.CREATOR))
     insert(repo)
   }
