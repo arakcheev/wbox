@@ -52,7 +52,7 @@ object RepositoryController extends JsonSerializerController with Secured {
    * @return
    */
   def update = Accessible[AnyContent](WRITE)(parse.anyContent) { implicit a => implicit repository => implicit request => !>>(((__ \ "name").read[String] ~
-    (__ \ "ts").readNullable[Long] /*//todo: read not applied to single field ???*/)((name: String, ts: Option[Long]) => repo update(repository.uuid, name)))
+    (__ \ "description").readNullable[String])((name: String, description: Option[String]) => repo update(repository.uuid, name,description)))
   }
 
   /**

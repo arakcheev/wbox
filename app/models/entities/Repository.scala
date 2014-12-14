@@ -199,11 +199,12 @@ object Repository extends Entity[Repository] {
     }
   }
 
-  def update(uuid: Option[String], name: String)(implicit user: User): Future[Option[Repository]] = {
+  def update(uuid: Option[String], name: String, description: Option[String])(implicit user: User): Future[Option[Repository]] = {
     import scala.concurrent.ExecutionContext.Implicits.global
     byUUID(uuid).flatMap {
       case Some(repo) =>
         repo.name = Some(name)
+        repo.description = description
         update(repo)
       case None =>
         Future.successful(None)
