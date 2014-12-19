@@ -92,9 +92,9 @@ object Attachment extends Entity[Attachment] {
    * @param repoUUId
    * @return
    */
-  def list(repoUUId: String) = {
+  def list(repoUUId: Option[String]) = {
     import scala.concurrent.ExecutionContext.Implicits.global
-    collection.find(BSONDocument("repo" -> repoUUId)).cursor[TT].collect[List]()
+    collection.find(BSONDocument("repo" -> repoUUId.getOrElse(""))).cursor[TT].collect[List]()
   }
 
   /**

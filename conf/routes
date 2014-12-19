@@ -26,7 +26,7 @@ POST        /repositories/new               controllers.RepositoryController.new
 POST        /repositories/update            controllers.RepositoryController.update
 POST        /repositories/invite            controllers.RepositoryController.invite
 
-GET         /att:repo                       controllers.AttachmentController.list(repo: String)
+GET         /att                            controllers.AttachmentController.list
 POST        /att/putfile                    controllers.AttachmentController.put
 POST        /att/new                        controllers.AttachmentController.gen
 POST        /att/update                     controllers.AttachmentController.update

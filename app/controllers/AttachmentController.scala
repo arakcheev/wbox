@@ -35,10 +35,9 @@ object AttachmentController extends JsonSerializerController with Secured {
 
   /**
    * List of attachments
-   * @param repo - uuid of repository
    * @return
    */
-  def list(repo: String) = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request => >>!(att list repo)}
+  def list = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request => >>!(att list repository.uuid)}
 
   /**
    * List entities attachments
@@ -66,6 +65,7 @@ object AttachmentController extends JsonSerializerController with Secured {
    * Put file and return JSON with url
    * @return
    */
-  def put = Accessible(READ)(parse.multipartFormData) { implicit a => implicit repository => implicit request => !>>(att put request.body.file("file"))}
+  def put = Accessible(READ)(parse.anyContent) { implicit a => implicit repository => implicit request =>
+    !>>(att put /*request.body.file("file")*/ None)}
 
 }
